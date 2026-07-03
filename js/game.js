@@ -348,6 +348,7 @@ function startExpedition(pokemonIds, explorationKey) {
 }
 
 function finishExpedition(pokemonIds, explorationKey) {
+    // 1. Mise à jour des Pokémon
     pokemonIds.forEach(id => {
         let p = gameState.activeTeam.find(p => p.id === id);
         if (p) {
@@ -355,11 +356,9 @@ function finishExpedition(pokemonIds, explorationKey) {
             p.expeditionEnd = null;
             p.explorationKey = null;
             
-            // Perte d'énergie et bonheur supplémentaire
             p.energie = Math.max(0, p.energie - 1.0);
             p.bonheur = Math.max(0, p.bonheur - 1.0);
             
-            // Gain XP
             p.xp += 50; 
             let xpNeeded = getRequiredXP(p.level);
             while (p.xp >= xpNeeded) { 
@@ -370,21 +369,36 @@ function finishExpedition(pokemonIds, explorationKey) {
         }
     });
 
-    // --- Ajout au sac ---
+    // 2. Gestion des récompenses aléatoires (Correction ici)
     const expData = EXPLORATIONS[explorationKey];
-    const itemKey = expData ? expData.rewardType : "baieOran";
     
-    if (!gameState.inventory) gameState.inventory = [];
-    
-    let existingItem = gameState.inventory.find(i => i.itemKey === itemKey);
-    
-    if (existingItem) {
-        existingItem.quantity += pokemonIds.length; 
-    } else {
-        gameState.inventory.push({ itemKey: itemKey, quantity: pokemonIds.length });
-    }
+    // On vérifie si la zone possède bien une liste "rewards"
+    if (expData && expData.rewards && expData.rewards.length > 0) {
+        
+        pokemonIds.forEach(() => {
+            // On tire un objet aléatoire dans le tableau "rewards"
+            const randomIndex = Math.floor(Math.random() * expData.rewards.length);
+            const itemKey = expData.rewards[randomIndex];
+            
+            if (!itemKey) return; // Sécurité
 
-    notify(`Expédition finie ! +${pokemonIds.length} ${itemKey}.`);
+            if (!gameState.inventory) gameState.inventory = [];
+            
+            let existingItem = gameState.inventory.find(i => i.itemKey === itemKey);
+            
+            if (existingItem) {
+                existingItem.quantity += 1; 
+            } else {
+                gameState.inventory.push({ itemKey: itemKey, quantity: 1 });
+            }
+            
+            notify(`Expédition : +1 ${itemKey} trouvé !`);
+        });
+        
+    } else {
+        // Fallback si jamais la zone est mal configurée
+        notify("Expédition finie, mais aucun objet trouvé.");
+    }
     
     saveGame();
     if(typeof updateUI === "function") updateUI();
