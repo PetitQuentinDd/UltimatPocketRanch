@@ -50,12 +50,20 @@ function performGameTick() {
 
     // 2. GESTION DU TEMPS ET RESSENTI
     const elapsedMs = now - gameState.lastTick;
-    // Si on a attendu plus de 10s, on calcule les ticks (évite les calculs inutiles chaque seconde)
     const ticksToProcess = Math.floor(elapsedMs / 15000); 
 
     if (ticksToProcess > 0) {
         let totalIncome = 0;
-        gameState.totalSeconds = (gameState.totalSeconds || 0) + (ticksToProcess * 15); // On avance le compteur bonheur
+        
+        // Calcul du temps écoulé total en secondes
+        const totalSecondsAdded = ticksToProcess * 15;
+        const oldTotalSeconds = gameState.totalSeconds || 0;
+        gameState.totalSeconds = oldTotalSeconds + totalSecondsAdded;
+
+        // Calcul du nombre de cycles de 5 min (300s) passés
+        // Si on est passé de 280s à 310s, on a passé 1 cycle.
+        // Si on est passé de 280s à 620s, on a passé 2 cycles.
+        const cyclesPassed = Math.floor(gameState.totalSeconds / 300);
 
         gameState.activeTeam.forEach(m => {
             if (!m.onExpedition) {
@@ -71,15 +79,16 @@ function performGameTick() {
                     xpNeeded = getRequiredXP(m.level);
                 }
 
-                // --- GESTION BONHEUR (toutes les 300s / 5min) ---
-                if (gameState.totalSeconds >= 300) {
-                    m.bonheur = Math.max(0, m.bonheur - 1.0);
+                // --- GESTION BONHEUR ---
+                // On perd 1 point de bonheur par cycle de 300s écoulé
+                if (cyclesPassed > 0) {
+                    m.bonheur = Math.max(0, m.bonheur - (1.0 * cyclesPassed));
                 }
             }
         });
 
-        // Réinitialisation du bonheur si on a dépassé les 5 min
-        if (gameState.totalSeconds >= 300) gameState.totalSeconds = 0;
+        // Garde uniquement le reste des secondes
+        gameState.totalSeconds = gameState.totalSeconds % 300;
 
         gameState.money += totalIncome;
         
@@ -213,28 +222,42 @@ function chooseStarter(pokemonName) {
 
 function switchZone(id, currentLocation) {
     let pIndex;
+    
     if (currentLocation === 'team') {
+        // --- DÉPLACEMENT VERS LA RÉSERVE ---
         pIndex = gameState.activeTeam.findIndex(p => p.id === id);
         if (pIndex > -1) {
-            let p = gameState.activeTeam[pIndex];
+            let p = gameState.activeTeam.splice(pIndex, 1)[0];
+            
             if (p.onExpedition) {
+                // On remet le pokémon dans la team si l'expédition empêche le mouvement
+                gameState.activeTeam.push(p); 
                 notify("Ce Pokémon est en expédition !");
                 return;
             }
-            gameState.activeTeam.splice(pIndex, 1);
+            
+            // On marque l'heure d'arrivée dans le stockage
+            p.timestampStockage = Date.now();
             gameState.reserve.push(p);
         }
     } else {
+        // --- DÉPLACEMENT VERS L'ÉQUIPE ---
         if (gameState.activeTeam.length >= 6) {
             notify("Ton équipe est pleine (Max 6) !");
             return;
         }
+        
         pIndex = gameState.reserve.findIndex(p => p.id === id);
         if (pIndex > -1) {
             let p = gameState.reserve.splice(pIndex, 1)[0];
+            
+            // On supprime le timestamp car il quitte le stockage
+            delete p.timestampStockage;
+            
             gameState.activeTeam.push(p);
         }
     }
+    
     saveGame();
     if(typeof updateUI === "function") updateUI();
 }
