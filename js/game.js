@@ -29,7 +29,6 @@ function getRequiredXP(level) {
 setInterval(performGameTick, 1000); 
 
 function performGameTick() {
-    if (isNaN(gameState.money)) gameState.money = 5000;
     const now = Date.now();
     if (!gameState.lastTick) gameState.lastTick = now;
 
@@ -107,7 +106,7 @@ function performGameTick() {
 // --- CALCUL DES REVENUS ---
 function calculateTickIncome(m) {
     let income = m.incomePerMin + (m.level - 1);
-    const multiBonheur = [1.0, 1.5, 2.0];
+    const multiBonheur = [0.5, 1.0, 1.5, 2.0];
     let indexBonheur = Math.max(0, Math.min(2, Math.floor(m.bonheur) - 1));
     income *= multiBonheur[indexBonheur];
     if (m.talent === "Productif") income *= 1.2;
@@ -120,39 +119,24 @@ function saveGame() {
 }
 
 function loadGame() {
-    try {
-        const newSave = localStorage.getItem("idleRanchSaveV2");
-        if (newSave) {
-            gameState = JSON.parse(newSave);
-        } else {
-            const oldSave = localStorage.getItem("IdleRanchSave");
-            if (oldSave) {
-                gameState = migrateOldSave(JSON.parse(oldSave));
-            } else {
-                createNewGame();
-                return;
-            }
-        }
-        
-        if (!gameState.pokedexUnlocked) gameState.pokedexUnlocked = [];
-        if (!gameState.inventory) gameState.inventory = [];
-        if (!gameState.pension) gameState.pension = [null, null];
-        if (gameState.activeEggIncubation === undefined) gameState.activeEggIncubation = null;
-        if (!gameState.lastTick) gameState.lastTick = Date.now();
-        
-    } catch (e) {
-        createNewGame();
-        return;
-    }
+    const oldSave = localStorage.getItem("pokemonBreeder_save");
+    const newSave = localStorage.getItem("idleRanchSaveV2");
 
-    const starterModal = document.getElementById('starter-modal');
-    if (starterModal && gameState.starterChosen === false) {
-        starterModal.style.display = 'flex';
+    if (oldSave && newSave === null) {
+        gameState = migrateOldSave(JSON.parse(oldSave));
+        localStorage.setItem("idleRanchSaveV2", JSON.stringify(gameState));
+        // localStorage.removeItem("pokemonBreeder_save");
+        return;
+    } if (newSave !== null) {
+        const dataV2 = localStorage.getItem("idleRanchSaveV2");
+        gameState = JSON.parse(dataV2)
+    } else {
+        createNewGame();
     }
 }
 
 function createNewGame() {
-    gameState = { 
+    gameState = {
         money: 5000, 
         activeTeam: [], 
         reserve: [], 
@@ -165,22 +149,29 @@ function createNewGame() {
     };
     saveGame();
     const starterModal = document.getElementById('starter-modal');
-    if (starterModal) starterModal.style.display = 'flex';
+    if (starterModal && gameState.starterChosen === false) {
+        starterModal.style.display = 'flex';
+    }
 }
 
 function migrateOldSave(oldData) {
-    let newData = oldData || { money: 5000, activeTeam: [], reserve: [], lastTick: Date.now(), starterChosen: false, pokedexUnlocked: [], inventory: [] };
+    let newData = oldData;
+
     newData.starterChosen = (newData.activeTeam.length > 0 || newData.reserve.length > 0);
     if (!newData.pokedexUnlocked) newData.pokedexUnlocked = [];
     if (!newData.inventory) newData.inventory = [];
     if (!newData.pension) newData.pension = [null, null];
     if (newData.activeEggIncubation === undefined) newData.activeEggIncubation = null;
+    if (!newData.lastTick) newData.lastTick = Date.now();
     
     let tousLesPokemon = [...newData.activeTeam, ...newData.reserve];
     tousLesPokemon.forEach(p => {
         if (!newData.pokedexUnlocked.includes(p.name)) newData.pokedexUnlocked.push(p.name);
         if (p.xp === undefined) p.xp = 0;
         if (p.level === undefined) p.level = 1;
+        if (p.talent === undefined) p.talent = TALENTS_DISPONIBLES[Math.floor(Math.random() * TALENTS_DISPONIBLES.length)];
+        if (p.bonheur === undefined) p.bonheur = 2.0;
+        if (p.energie === undefined) p.energie = 2.0;
     });
     return newData;
 }
@@ -268,7 +259,6 @@ function buyEgg(region) {
     const prixRegion = { "kanto": 250, "johto": 500, "hoenn": 1000, "sinnoh": 1500, "unys": 2000 };
     let cost = prixRegion[region] || 5000;
 
-    if (isNaN(gameState.money)) gameState.money = 5000;
 
     console.log("Tentative d'achat :", region, "| Coût :", cost, "| Argent :", gameState.money);
 
@@ -344,6 +334,7 @@ function buyEgg(region) {
     
     if(typeof showHatchPopup === "function") showHatchPopup(newPokemon, isNewToPokedex);
 }
+
 // --- EXPÉDITIONS CORRIGÉES ---
 function startExpedition(pokemonIds, explorationKey) {
     if (typeof EXPLORATIONS === 'undefined' || !EXPLORATIONS[explorationKey]) return;
@@ -610,7 +601,6 @@ function estCompatible(p1, p2) {
     return p1.name === p2.name;
 }
 
-// --- DANS game.js ---
 
 function lancerIncubation() {
     let p1 = gameState.pension[0];
@@ -701,7 +691,7 @@ function rafraichirPensionVisuelle() {
 function hardResetGame() {
     if (confirm("🚨 ATTENTION ! Veux-tu vraiment effacer toute ta partie ? Tu vas perdre tous tes Pokémon et tes PO ! C'est irréversible.")) {
         localStorage.removeItem("idleRanchSaveV2");
-        localStorage.removeItem("IdleRanchSave");
+        localStorage.removeItem("pokemonBreeder_save");
         location.reload(); 
     }
 }
