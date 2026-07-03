@@ -1,0 +1,260 @@
+/* ==========================================================================
+   IDLE POCKET RANCH - FEUILLE DE STYLE GÉNÉRALE
+   ========================================================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+}
+
+html, body {
+    background-color: #121620 !important;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 480px;
+    height: 95vh;
+    max-height: 100vh;
+    background-color: #151924;
+    border: 3px solid #cca43b;
+    border-radius: 24px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
+    overflow-y: auto;
+    position: relative;
+}
+
+/* --- LOGO & HEADER --- */
+.game-logo-container { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 5px 0 10px 0; }
+.logo-pokeball { width: 26px; height: 26px; background: linear-gradient(#cca43b 45%, #151924 45%, #151924 55%, #1b202c 55%); border: 2px solid #cca43b; border-radius: 50%; position: relative; }
+.logo-text { font-size: 13px; font-weight: bold; color: #cca43b; letter-spacing: 2px; }
+.logo-text span { color: #79eddf; margin-left: 5px; }
+
+#game-header { display: flex; justify-content: space-between; align-items: center; border: 2px solid #cca43b; border-radius: 10px; padding: 8px; background-color: #1a1f2c; color: #ffca28; font-size: 10px; font-weight: bold; }
+
+/* --- NAVIGATION & TABS --- */
+#main-content { display: flex; flex-direction: column; flex: 1; margin: 10px 0; overflow-y: auto; }
+.tab-content { display: none; height: 100%; flex-direction: column; }
+.tab-content.active { display: flex; }
+.section-title { text-align: center; font-size: 12px; color: #79eddf; margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
+
+.bottom-navigation { display: flex; gap: 4px; background-color: #1a1f2c; border: 2px solid #cca43b; border-radius: 12px; padding: 6px; margin-top: auto; }
+.nav-btn { flex: 1; background: #121620; border: 1px solid #4a5568; color: #94a3b8; padding: 10px 1px; font-size: 9px; font-weight: bold; border-radius: 8px; cursor: pointer; text-align: center; }
+.nav-btn.active { background-color: #16222f; color: #79eddf; border-color: #5de4d6; }
+
+/* --- CARTES POKÉMON & GRILLES --- */
+.monster-card { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px; border-radius: 8px; background: #1e293b; border: 1px solid #334155; }
+.monster-image-container { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; }
+.monster-name { font-size: 13px !important; font-weight: bold; color: #ffffff; text-align: center; margin-top: 4px; }
+.monster-income { font-size: 9px; color: #4caf50; font-weight: bold; text-align: center; margin-top: 2px; }
+
+.team-enclosure { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; background-color: #16222f; border: 3px solid #5de4d6; border-radius: 16px; }
+.reserve-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; background-color: #1b202c; border: 2px solid #e17c3e; border-radius: 14px; }
+
+/* --- BORDERS & EFFECTS --- */
+.rare-border { border: 2px solid #22c55e !important; }
+.legend-border { border: 2px solid #3b82f6 !important; }
+.baby-border { border: 3px solid #f472b6 !important; box-shadow: 0 0 12px rgba(244, 114, 182, 0.7) !important; }
+.gold-evo-text { color: #ffd700 !important; font-weight: bold; animation: pulseGlow 2s infinite ease-in-out; }
+
+@keyframes pulseGlow {
+    0%, 100% { text-shadow: 0 0 4px rgba(255, 215, 0, 0.5); }
+    50% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.9); }
+}
+
+/* --- UTILS --- */
+button:disabled { opacity: 0.3 !important; cursor: not-allowed !important; filter: grayscale(1); }
+.pierre-btn { background: transparent !important; border: none !important; cursor: pointer; transition: transform 0.2s; }
+.pierre-btn:hover { transform: scale(1.1); }
+#expedition-list div { border-radius: 8px; transition: 0.2s; }
+#expedition-list div:hover { background: #334155; }
+.pokeball-btn {
+    width: 30px; 
+    height: 30px;
+    background-image: url('url_de_ton_image_pokeball.png'); /* Assure-toi que l'image existe */
+    background-size: cover;
+    cursor: pointer;
+    display: inline-block; /* Assure-toi qu'il n'est pas en display: none */
+}
+.pokeball-btn {
+    width: 22px;
+    height: 22px;
+    background: radial-gradient(circle at 50% 40%, #ef4444 45%, #151924 45%, #151924 55%, #ffffff 55%);
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-left: 6px;
+}
+.pokeball-btn::before {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #ffffff;
+    border: 1.5px solid #151924;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.pokeball-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 12px #cca43b;
+}
+.reserve-grid {
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 6px;
+    background-color: #1b202c; 
+    border: 2px solid #e17c3e; 
+    border-radius: 14px; 
+    padding: 10px;
+    width: 100%;
+}
+
+.reserve-grid .monster-card { 
+    background-color: #242b3a; 
+    border-radius: 8px; 
+    padding: 4px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    border: 1px solid #334155; 
+    position: relative;
+    min-height: 65px;
+}
+
+/* Masque les infos inutiles dans la réserve pour plus de lisibilité */
+.reserve-grid .monster-name,
+.reserve-grid .monster-xp,
+.reserve-grid .monster-actions, 
+.reserve-grid .evolve-btn { 
+    display: none; 
+}
+
+.reserve-grid .monster-info {
+    display: block !important;
+    margin-top: 1px;
+}
+
+.reserve-grid .monster-income {
+    font-size: 7.5px !important;
+    color: #4caf50;
+    font-weight: bold;
+    text-align: center;
+}
+
+.reserve-grid .monster-image-container img { 
+    width: 34px; 
+    height: 34px; 
+}
+/* Cartes Expéditions et Arène */
+.zone-card, .champion-card { 
+    background-color: #1b202c; 
+    border: 1px solid #4a5568; 
+    border-radius: 8px; 
+    padding: 6px 10px; 
+    margin-bottom: 5px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+/* Boutons Expéditions et Arène */
+.zone-btn, .champion-btn { 
+    background: #cca43b; 
+    color: #151924; 
+    border: none; 
+    padding: 4px 8px; 
+    font-weight: bold; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-size: 9px; 
+}
+.champion-btn { 
+    background: #ef4444; 
+    color: white; 
+}
+.champion-btn:disabled { 
+    background: #4a5568 !important; 
+    color: #94a3b8 !important; 
+    cursor: not-allowed !important; 
+}
+
+/* Boîte de combat Arène */
+#arene-combat-box { 
+    text-align: center; 
+    background: #1b202c; 
+    padding: 12px; 
+    border-radius: 8px; 
+    border: 2px solid #ef4444; 
+}
+#combat-title { 
+    color: white; 
+    font-size: 12px; 
+    margin-bottom: 8px; 
+    text-transform: uppercase; 
+}
+.combat-hp-flex { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 10px; 
+}
+.player-hp-text { 
+    color: #79eddf; 
+    font-size: 10px; 
+    font-weight: bold; 
+}
+.boss-hp-text { 
+    color: #ef4444; 
+    font-size: 10px; 
+    font-weight: bold; 
+}
+#combat-log { 
+    color: #cbd5e1; 
+    font-size: 9px; 
+    font-family: monospace; 
+    min-height: 25px; 
+}
+.pension-container {
+    display: flex;
+    flex-direction: row !important; /* Force l'alignement horizontal */
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 15px 0;
+}
+
+.pension-slot {
+    width: 80px;
+    height: 80px;
+    border: 2px dashed #475569;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #0f172a;
+    flex-shrink: 0; /* Empêche les cases de rétrécir */
+}

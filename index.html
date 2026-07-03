@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Idle Pocket Ranch</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <!-- EN-TÊTE ET LOGO -->
+        <div class="game-logo-container">
+            <div class="logo-pokeball"></div>
+            <h1 class="logo-text">IDLE POCKET<span>RANCH</span></h1>
+        </div>
+
+        <div id="game-header">
+            <div class="header-items">
+                💰 <span id="money">0</span> PO
+            </div>
+            <div class="header-items">
+                <button onclick="toggleSac(true)" style="background: #334155; border: 1px solid #475569; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">🎒 Sac</button>
+                <div class="pokeball-btn" onclick="openTab('tab-succes')" title="Objectifs & Réinitialisation"></div>
+            </div>
+        </div>
+
+        <!-- ALERTE EXPÉDITION -->
+        <div id="expeditions-active-box" style="display: none;">
+            🧭 Expédition en cours... Retour dans : <span id="expedition-timer">0:00</span>
+        </div>
+
+        <!-- CONTENU PRINCIPAL (ONGLETS) -->
+        <div id="main-content">
+            
+            <!-- ONGLET 1 : RANCH -->
+            <div id="tab-enclos" class="tab-content active">
+                <div class="section-title">Mon Enclos (<span id="team-count">0</span>/6)</div>
+                <div id="active-team" class="team-enclosure"></div>
+            </div>
+
+            <!-- ONGLET 2 : STOCKAGE & PENSION -->
+            <div id="tab-stock" class="tab-content" style="display: none;">
+                <!-- Zone Pension -->
+                <div class="section-title">Pension Pokémon</div>
+                <div class="pension-container">
+                    <div id="pension-slot-1" class="pension-slot" onclick="gererClicPension(0)">
+                        <span style="color: #475569; font-size: 24px;">1</span>
+                    </div>
+                    <div style="color: #e11d48; font-size: 24px; font-weight: bold;">+</div>
+                    <div id="pension-slot-2" class="pension-slot" onclick="gererClicPension(1)">
+                        <span style="color: #475569; font-size: 24px;">2</span>
+                    </div>
+                </div>
+                
+                <button onclick="lancerIncubation()" class="champion-btn" style="background: #e11d48; padding: 8px 16px; margin-bottom: 15px; width: 100%;">FAIRE UN ŒUF</button>
+                
+                <div id="incubateur-ui"></div>
+
+                <!-- Zone Grille de Réserve -->
+                <div class="section-title">Réserve Élevage</div>
+                <div id="reserve" class="reserve-grid"></div>
+            </div>
+
+            <!-- ONGLET 3 : POKÉDEX -->
+            <div id="tab-pokedex" class="tab-content" style="display: none;">
+                <div class="section-title">Pokédex National</div>
+                <div class="pokedex-progress-container">
+                    <div class="progress-bar-bg">
+                        <div id="pokedex-progress-fill" class="progress-bar-fill"></div>
+                    </div>
+                    <span id="pokedex-count-ratio" class="progress-ratio">0 / 251</span>
+                </div>
+                <div id="pokedex-grid" class="pokedex-grid-layout"></div>
+            </div>
+
+            <!-- ONGLET 4 : MAP & ARÈNE -->
+            <div id="tab-map" class="tab-content" style="display: none;">
+                <div class="section-title">Explorations & Arène</div>
+                
+                <div style="margin-top: 5px; margin-bottom: 5px;">
+                    <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px; font-weight: bold;">🗺️ EXPÉDITIONS VIA RANCH :</div>
+                    <div id="zones-container"></div>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px; font-weight: bold;">🥊 DÉFIER LES CHAMPIONS :</div>
+                    <div id="arene-selection"></div>
+                    
+                    <div id="arene-combat-box" style="display: none;">
+                        <h3 id="combat-title">Combat en cours...</h3>
+                        <div class="combat-hp-flex">
+                            <div class="player-hp-text">Mon Équipe: <span id="player-hp">0</span> PV</div>
+                            <div class="boss-hp-text"><span id="boss-name">Pierre</span>: <span id="boss-hp">0</span> PV</div>
+                        </div>
+                        <p id="combat-log">Le combat commence ! ⚔️</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONGLET 5 : BOUTIQUE D'ŒUFS -->
+            <div id="tab-oeufs" class="tab-content" style="display: none;">
+                <button id="btn-dev-menu" style="display:none; width:100%; background:#7f1d1d; color:white; padding:10px; margin-bottom:15px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;" onclick="ouvrirDevPokedex()">
+                    🔧 Mode Dev : Générer un Pokémon
+                </button>
+                <div class="section-title">Boutique d'Œufs</div>
+                <div style="display: flex; flex-direction: column; gap: 15px; padding: 10px;">
+                    
+                    <div style="background: #1e293b; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #334155;">
+                        <h3 style="color: white; margin: 0 0 10px 0; font-size: 14px;"> Œuf Kanto Mystère</h3>
+                        <button id="btn-buy-kanto" onclick="buyEgg('kanto')" style="background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px;">ACHETER (250 PO)</button>
+                    </div>
+
+                    <div style="background: #1e293b; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #334155;">
+                        <h3 style="color: white; margin: 0 0 10px 0; font-size: 14px;"> Œuf Johto Mystère</h3>
+                        <button id="btn-buy-johto" onclick="buyEgg('johto')" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px;">ACHETER (500 PO)</button>
+                    </div>
+
+                    <div style="background: #1e293b; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #334155;">
+                        <h3 style="color: white; margin: 0 0 10px 0; font-size: 14px;"> Œuf Hoenn Mystère</h3>
+                        <button id="btn-buy-hoenn" onclick="buyEgg('hoenn')" style="background: #059669; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px;">ACHETER (1000 PO)</button>
+                    </div>
+
+                    <div style="background: #1e293b; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #334155;">
+                        <h3 style="color: white; margin: 0 0 10px 0; font-size: 14px;"> Œuf Sinnoh Mystère</h3>
+                        <button id="btn-buy-sinnoh" onclick="buyEgg('sinnoh')" style="background: #7c3aed; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px;">ACHETER (1500 PO)</button>
+                    </div>
+
+                    <div style="background: #1e293b; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #334155;">
+                        <h3 style="color: white; margin: 0 0 10px 0; font-size: 14px;"> Œuf Unys Mystère</h3>
+                        <button id="btn-buy-unys" onclick="buyEgg('unys')" style="background: #db2777; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px;">ACHETER (2000 PO)</button>
+                    </div>
+                    
+                    <div id="dev-menu-panel" style="display:none; background:#0f172a; border:1px solid #7f1d1d; padding:10px; margin-bottom:10px; border-radius:8px;">
+                        <select id="dev-poke-select"></select>
+                        <input type="number" id="dev-poke-lvl" placeholder="Niveau" value="1" style="width:60px;">
+                        <input type="number" id="dev-poke-income" placeholder="PO/min" value="100" style="width:80px;">
+                        <button onclick="genererPokemonDev()" style="background:#16a34a; color:white;">Générer</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONGLET 6 : SUCCÈS & OPTIONS -->
+            <div id="tab-succes" class="tab-content" style="display: none;">
+                <div class="section-title">Objectifs & Système</div>
+                
+                <div class="reset-box-container">
+                    <p style="color: #94a3b8; font-size: 10px; margin-bottom: 6px;">Réinitialiser complètement votre partie (Action Irréversible) :</p>
+                    <button class="hard-reset-btn" onclick="hardResetGame()">⚠️ RÉINITIALISER LE JEU</button>
+                </div>
+
+                <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px; font-weight: bold; margin-top: 10px;">🏆 ACCOMPLISSEMENTS :</div>
+                <div id="succes-list-container" style="flex: 1; overflow-y: auto;"></div>
+            </div>
+
+        </div>
+
+        <!-- MENU DE NAVIGATION BAS -->
+        <div class="bottom-navigation">
+            <button class="nav-btn active" id="nav-tab-enclos" onclick="openTab('tab-enclos')">🏡 RANCH</button>
+            <button class="nav-btn" id="nav-tab-stock" onclick="openTab('tab-stock')">📦 STOCK</button>
+            <button class="nav-btn" id="nav-tab-pokedex" onclick="openTab('tab-pokedex')">📲 INDEX</button>
+            <button class="nav-btn" id="nav-tab-map" onclick="openTab('tab-map')">🛒 MAP</button>
+            <button class="nav-btn" id="nav-tab-oeufs" onclick="openTab('tab-oeufs')">🥚 ŒUFS</button>
+        </div>
+
+    </div>
+
+    <!-- ==========================================
+         MODALS (FENÊTRES FLOTTANTES)
+         ========================================== -->
+
+    <!-- Modal Sac à Dos -->
+    <div id="poche-sac-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; padding: 20px;">
+        <div style="background: #1e293b; width: 100%; max-width: 480px; height: 80%; border-radius: 12px; border: 2px solid #475569; display: flex; flex-direction: column;">
+            <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155;">
+                <span style="font-weight: bold; color: white;">🎒 Mon Sac à Dos</span>
+                <button onclick="toggleSac(false)" style="background: #ef4444; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Fermer</button>
+            </div>
+            <div id="inventory-container" class="reserve-grid" style="padding: 15px; overflow-y: auto; flex-grow: 1;"></div>
+        </div>
+    </div>
+
+    <!-- Modal Dev Pokédex -->
+    <div id="dev-pokedex-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; flex-direction: column; align-items: center; justify-content: center; padding: 15px;">
+        <div style="background: #1e293b; width: 100%; max-width: 420px; max-height: 80vh; border-radius: 8px; border: 2px solid #ef4444; display: flex; flex-direction: column;">
+            <div style="padding: 10px; background: #0f172a; color: white; display: flex; justify-content: space-between; font-weight: bold; border-radius: 8px 8px 0 0;">
+                <span>🔧 Choisir un Pokémon</span>
+                <button onclick="document.getElementById('dev-pokedex-modal').style.display='none'" style="background: #ef4444; color: white; border: none; cursor: pointer; padding: 2px 8px; border-radius: 4px;">X</button>
+            </div>
+            <div id="dev-pokedex-grid" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 15px; overflow-y: auto; justify-content: center;"></div>
+        </div>
+    </div>
+
+    <!-- Modal Dev Stats -->
+    <div id="dev-stats-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 6000; flex-direction: column; align-items: center; justify-content: center; padding: 15px;">
+         <div style="background: #1e293b; padding: 20px; border-radius: 8px; border: 2px solid #fbbf24; text-align: center; color: white; width: 250px;">
+             <h3 id="dev-stats-name" style="margin-bottom: 10px; color: #fbbf24;">Nom</h3>
+             <img id="dev-stats-img" src="" style="width: 80px; height: 80px; margin-bottom: 15px; background: #334155; border-radius: 50%;">
+             <div style="margin-bottom: 10px;">
+                 <label>Niveau souhaité :</label><br>
+                 <input type="number" id="dev-poke-level" value="1" style="width: 100%; padding: 5px; text-align: center; border-radius: 4px; margin-top: 5px;">
+             </div>
+             <div style="margin-bottom: 20px;">
+                 <label>PO par Minute :</label><br>
+                 <input type="number" id="dev-poke-income" value="100" style="width: 100%; padding: 5px; text-align: center; border-radius: 4px; margin-top: 5px;">
+             </div>
+             <button onclick="validerGenerationDev()" style="width: 100%; background: #16a34a; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 5px;">Générer</button>
+             <button onclick="document.getElementById('dev-stats-modal').style.display='none'" style="width: 100%; background: #64748b; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Retour</button>
+         </div>
+    </div>
+
+    <!-- Modal Starter -->
+    <div id="starter-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+        <h2 style="color: white; text-align: center; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Bienvenue dans ton Ranch !</h2>
+        <p style="color: #cbd5e1; text-align: center; font-size: 14px; margin-bottom: 30px;">Choisis ton premier compagnon pour commencer l'aventure.</p>
+        
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            
+            <div onclick="chooseStarter('Bulbizarre')" style="background: #1e293b; border: 3px solid #22c55e; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; width: 100px; transition: transform 0.2s;">
+                <img src="https://img.pokemondb.net/sprites/black-white/anim/normal/bulbasaur.gif" style="height: 60px; margin-bottom: 10px;">
+                <div style="color: white; font-weight: bold; font-size: 12px;">Bulbizarre</div>
+                <div style="color: #22c55e; font-size: 10px; margin-top: 5px;">Plante</div>
+            </div>
+
+            <div onclick="chooseStarter('Salamèche')" style="background: #1e293b; border: 3px solid #ef4444; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; width: 100px; transition: transform 0.2s;">
+                <img src="https://img.pokemondb.net/sprites/black-white/anim/normal/charmander.gif" style="height: 60px; margin-bottom: 10px;">
+                <div style="color: white; font-weight: bold; font-size: 12px;">Salamèche</div>
+                <div style="color: #ef4444; font-size: 10px; margin-top: 5px;">Feu</div>
+            </div>
+
+            <div onclick="chooseStarter('Carapuce')" style="background: #1e293b; border: 3px solid #3b82f6; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; width: 100px; transition: transform 0.2s;">
+                <img src="https://img.pokemondb.net/sprites/black-white/anim/normal/squirtle.gif" style="height: 60px; margin-bottom: 10px;">
+                <div style="color: white; font-weight: bold; font-size: 12px;">Carapuce</div>
+                <div style="color: #3b82f6; font-size: 10px; margin-top: 5px;">Eau</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Expéditions -->
+    <div id="expedition-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; justify-content: center; align-items: center;">
+        <div style="background: #1e293b; padding: 20px; border-radius: 16px; border: 2px solid #79eddf; width: 90%; max-width: 400px; color: white;">
+            <h3 style="text-align: center; margin-bottom: 15px;">Sélectionne tes Pokémon</h3>
+            <div id="expedition-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;"></div>
+            <button id="confirm-expedition-btn" style="width: 100%; padding: 10px; background: #79eddf; border: none; border-radius: 8px; font-weight: bold;">Lancer l'expédition</button>
+            <button onclick="document.getElementById('expedition-modal').style.display='none'" style="width: 100%; padding: 10px; margin-top: 10px; background: #475569; border: none; border-radius: 8px; color: white;">Annuler</button>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/data.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+    
+    <script>
+        window.onload = () => {
+            // 1. Charge la sauvegarde (ou crée une nouvelle partie)
+            loadGame();
+            
+            // 2. Met à jour l'affichage
+            updateUI();
+            
+            // 3. S'assure que le premier onglet est bien ouvert
+            openTab('tab-enclos');
+        };
+    </script>
+
+</body>
+</html>
