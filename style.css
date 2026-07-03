@@ -258,3 +258,7 @@ button:disabled { opacity: 0.3 !important; cursor: not-allowed !important; filte
     background: #0f172a;
     flex-shrink: 0; /* Empêche les cases de rétrécir */
 }
+
+.pokedex-progress-container{
+    color: white;
+}
