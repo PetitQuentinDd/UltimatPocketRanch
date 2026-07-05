@@ -4,6 +4,7 @@
 
 let gameState = { 
     money: 0, 
+    fragments: 0,
     activeTeam: [], 
     reserve: [], 
     lastTick: Date.now(),
@@ -14,6 +15,56 @@ let gameState = {
     activeEggIncubation: null
 };
 
+let multiReleaseMode = false;
+let selectedForRelease = [];
+let sellMode = false;
+let selectedForSale = []; // Stocke les itemKey sélectionnés
+
+function toggleSellMode() {
+    sellMode = !sellMode;
+    selectedForSale = []; // Reset si on quitte le mode
+    updateInventoryUI();
+}
+
+function toggleItemSelection(itemKey) {
+    if (!sellMode) return;
+    
+    // On ajoute ou on retire l'objet de la sélection
+    if (selectedForSale.includes(itemKey)) {
+        selectedForSale = selectedForSale.filter(k => k !== itemKey);
+    } else {
+        selectedForSale.push(itemKey);
+    }
+    updateInventoryUI(); // Rafraîchit pour voir les bordures
+}
+
+function confirmSale() {
+    if (selectedForSale.length === 0) {
+        notify("Aucun objet sélectionné !");
+        return;
+    }
+
+    let totalGain = 0;
+    selectedForSale.forEach(itemKey => {
+        let invItem = gameState.inventory.find(i => i.itemKey === itemKey);
+        if (invItem && invItem.quantity > 0) {
+            let itemData = ITEMS_CONFIG[itemKey];
+            totalGain += (itemData.price || 0);
+            invItem.quantity--;
+            if (invItem.quantity <= 0) gameState.inventory = gameState.inventory.filter(i => i.itemKey !== itemKey);
+        }
+    });
+
+    gameState.money += totalGain;
+    notify(`💰 Vente validée : +${totalGain} PO !`);
+    
+    selectedForSale = [];
+    sellMode = false;
+    saveGame();
+    updateInventoryUI();
+    if(typeof updateUI === "function") updateUI();
+}
+
 // --- RACCOURCI POUR LES NOTIFICATIONS ---
 function notify(msg) {
     if (typeof showToast === "function") showToast(msg);
@@ -22,7 +73,7 @@ function notify(msg) {
 
 // --- COURBE D'EXPÉRIENCE PROCÉDURALE ---
 function getRequiredXP(level) {
-    return 100 + ((level - 1) * 50); // Ex: Nv.1=100, Nv.2=150, Nv.3=200...
+    return 100 + ((level - 1) * 50);
 }
 
 // --- MOTEUR DE TEMPS (Gère le Hors Ligne & les Expéditions) ---
@@ -59,11 +110,7 @@ function performGameTick() {
         const oldTotalSeconds = gameState.totalSeconds || 0;
         gameState.totalSeconds = oldTotalSeconds + totalSecondsAdded;
 
-        // Calcul du nombre de cycles de 5 min (300s) passés
-        // Si on est passé de 280s à 310s, on a passé 1 cycle.
-        // Si on est passé de 280s à 620s, on a passé 2 cycles.
-        const cyclesPassed = Math.floor(gameState.totalSeconds / 300);
-
+        // --- A. GESTION DE L'ÉQUIPE ACTIVE (Revenus, XP) ---
         gameState.activeTeam.forEach(m => {
             if (!m.onExpedition) {
                 // Revenus et XP
@@ -77,18 +124,33 @@ function performGameTick() {
                     m.level++;
                     xpNeeded = getRequiredXP(m.level);
                 }
-
-                // --- GESTION BONHEUR ---
-                // On perd 1 point de bonheur par cycle de 300s écoulé
-                if (cyclesPassed > 0) {
-                    m.bonheur = Math.max(0, m.bonheur - (1.0 * cyclesPassed));
-                }
+                
+                // LE BONHEUR NE BAISSE PLUS DU TOUT ICI !
             }
+        });
+
+        // --- B. GESTION DE LA RÉSERVE (Régénération d'Énergie) ---
+        // Le maximum d'énergie est 3. On veut que ça se remplisse en 1 heure (3600 secondes).
+        const energieGagnee = 3 * (totalSecondsAdded / 3600);
+        
+        gameState.reserve.forEach(m => {
+            // 1. Assurer que l'énergie est un nombre
+    if (typeof m.energie !== 'number') m.energie = 0;
+    
+    // 2. Si le Pokémon a moins de 3 points
+    if (m.energie < 3) {
+        // On ajoute l'énergie uniquement pour le temps passé
+        // 1 point toutes les 600s (10 min) = 0.00166 par seconde
+        // Pour éviter les bugs, on fait l'addition très simplement :
+        m.energie += (0.00166 * totalSecondsAdded);
+        
+        // 3. Plafond à 3
+        if (m.energie > 3) m.energie = 3;
+    }
         });
 
         // Garde uniquement le reste des secondes
         gameState.totalSeconds = gameState.totalSeconds % 300;
-
         gameState.money += totalIncome;
         
         // --- PROGRESSION DE L'INCUBATEUR ---
@@ -102,7 +164,6 @@ function performGameTick() {
         if (!expeditionFinished && typeof updateUI === "function") updateUI();
     }
 }
-
 // --- CALCUL DES REVENUS ---
 function calculateTickIncome(m) {
     let income = m.incomePerMin + (m.level - 1);
@@ -125,7 +186,6 @@ function loadGame() {
     if (oldSave && newSave === null) {
         gameState = migrateOldSave(JSON.parse(oldSave));
         localStorage.setItem("idleRanchSaveV2", JSON.stringify(gameState));
-        // localStorage.removeItem("pokemonBreeder_save");
         return;
     } if (newSave !== null) {
         const dataV2 = localStorage.getItem("idleRanchSaveV2");
@@ -156,7 +216,6 @@ function createNewGame() {
 
 function migrateOldSave(oldData) {
     let newData = oldData;
-
     newData.starterChosen = (newData.activeTeam.length > 0 || newData.reserve.length > 0);
     if (!newData.pokedexUnlocked) newData.pokedexUnlocked = [];
     if (!newData.inventory) newData.inventory = [];
@@ -193,8 +252,8 @@ function chooseStarter(pokemonName) {
         image: choice.image,
         incomePerMin: choice.incomePerMin,
         niveauRarete: "starter",
-        energie: 3.0,
-        bonheur: 3.0,
+        energie: 3,
+        bonheur: 1,
         level: 5,
         xp: 0,
         talent: "Leader",
@@ -212,39 +271,33 @@ function chooseStarter(pokemonName) {
 }
 
 function switchZone(id, currentLocation) {
+    if (multiReleaseMode && currentLocation === 'reserve') {
+        toggleSelection(id);
+        return; 
+    }
     let pIndex;
     
     if (currentLocation === 'team') {
-        // --- DÉPLACEMENT VERS LA RÉSERVE ---
         pIndex = gameState.activeTeam.findIndex(p => p.id === id);
         if (pIndex > -1) {
             let p = gameState.activeTeam.splice(pIndex, 1)[0];
-            
             if (p.onExpedition) {
-                // On remet le pokémon dans la team si l'expédition empêche le mouvement
                 gameState.activeTeam.push(p); 
                 notify("Ce Pokémon est en expédition !");
                 return;
             }
-            
-            // On marque l'heure d'arrivée dans le stockage
             p.timestampStockage = Date.now();
             gameState.reserve.push(p);
         }
     } else {
-        // --- DÉPLACEMENT VERS L'ÉQUIPE ---
         if (gameState.activeTeam.length >= 6) {
             notify("Ton équipe est pleine (Max 6) !");
             return;
         }
-        
         pIndex = gameState.reserve.findIndex(p => p.id === id);
         if (pIndex > -1) {
             let p = gameState.reserve.splice(pIndex, 1)[0];
-            
-            // On supprime le timestamp car il quitte le stockage
             delete p.timestampStockage;
-            
             gameState.activeTeam.push(p);
         }
     }
@@ -253,35 +306,36 @@ function switchZone(id, currentLocation) {
     if(typeof updateUI === "function") updateUI();
 }
 
-// --- ACHAT D'OEUFS ---
+// --- ACHAT D'OEUFS (VERSION DATA-DRIVEN SÉCURISÉE) ---
 function buyEgg(region) {
-    // 1. Vérification des prix et de l'argent
-    const prixRegion = { "kanto": 250, "johto": 500, "hoenn": 1000, "sinnoh": 1500, "unys": 2000 };
-    let cost = prixRegion[region] || 5000;
+    console.log("Achat demandé pour la région :", region);
 
-
-    console.log("Tentative d'achat :", region, "| Coût :", cost, "| Argent :", gameState.money);
-
-    if (gameState.money < cost) {
-        notify("Pas assez de PO !");
-        return;
-    }
+    const PRIX_REGION = { 
+        "kanto": 2500, "johto": 5000, "hoenn": 10000, "sinnoh": 15000, 
+    };
     
-    // 2. Sélection de la liste de Pokémon
-    let listeObj;
-    if (region === "johto") {
-        listeObj = (typeof LISTE_HGSS !== 'undefined') ? LISTE_HGSS : null;
-    } else {
-        listeObj = (typeof LISTE_KANTO !== 'undefined') ? LISTE_KANTO : null;
-    }
+    const LISTES_REGION = {
+        "kanto": typeof LISTE_KANTO !== 'undefined' ? LISTE_KANTO : null,
+        "johto": typeof LISTE_HGSS !== 'undefined' ? LISTE_HGSS : null,
+        "hoenn": typeof LISTE_ROSA !== 'undefined' ? LISTE_ROSA : null,
+        "sinnoh": typeof LISTE_DBPE !== 'undefined' ? LISTE_DBPE : null
+    };
+
+    const regionKey = region ? region.toLowerCase() : "kanto";
+    const cost = PRIX_REGION[regionKey] || 2500;
+    const listeObj = LISTES_REGION[regionKey];
 
     if (!listeObj) {
-        notify("Erreur : Les données de la région sont introuvables.");
-        console.error("Liste non trouvée pour la région :", region);
+        notify("Boutique fermée ou données introuvables pour : " + regionKey);
+        console.error("Erreur : La liste pour", regionKey, "n'est pas chargée.");
         return;
     }
 
-    // 3. Calcul de rareté
+    if (gameState.money < cost) {
+        notify(`Pas assez de PO ! Il te faut ${cost} PO.`);
+        return;
+    }
+
     let roll = Math.random() * 100;
     let rarete = "commun";
     if (roll > 99) rarete = "legendaire";
@@ -290,22 +344,30 @@ function buyEgg(region) {
     else if (roll > 60) rarete = "peuCommun";
 
     let listePoke = listeObj[rarete];
+    
     if (!listePoke || listePoke.length === 0) {
-        notify("Erreur : Aucun Pokémon trouvé pour cette rareté.");
-        return;
+        rarete = "commun";
+        listePoke = listeObj["commun"];
+        if (!listePoke || listePoke.length === 0) {
+            notify("Erreur critique : Aucun Pokémon dans la liste de cette région.");
+            return;
+        }
     }
 
-    // 4. Achat et génération
     gameState.money -= cost;
     let nomPokemon = listePoke[Math.floor(Math.random() * listePoke.length)];
     
-    let idPokedex = POKEDEX_IDS[nomPokemon] || 1;
+    let idPokedex = (typeof POKEDEX_IDS !== 'undefined' && POKEDEX_IDS[nomPokemon]) ? POKEDEX_IDS[nomPokemon] : 1;
     let imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${idPokedex}.gif`;
     
-    let minPO = REVENUS_RARETE[rarete].min;
-    let maxPO = REVENUS_RARETE[rarete].max;
-    let revenuBase = Math.floor(Math.random() * (maxPO - minPO + 1)) + minPO;
-    let talentTire = TALENTS_DISPONIBLES[Math.floor(Math.random() * TALENTS_DISPONIBLES.length)];
+    let revenus = (typeof REVENUS_RARETE !== 'undefined' && REVENUS_RARETE[rarete]) 
+        ? REVENUS_RARETE[rarete] 
+        : { min: 1, max: 10 };
+    let revenuBase = Math.floor(Math.random() * (revenus.max - revenus.min + 1)) + revenus.min;
+    
+    let talentTire = (typeof TALENTS_DISPONIBLES !== 'undefined' && TALENTS_DISPONIBLES.length > 0) 
+        ? TALENTS_DISPONIBLES[Math.floor(Math.random() * TALENTS_DISPONIBLES.length)] 
+        : "Aucun talent";
 
     let newPokemon = {
         id: Date.now().toString() + Math.floor(Math.random() * 1000),
@@ -332,35 +394,38 @@ function buyEgg(region) {
     saveGame();
     if(typeof updateUI === "function") updateUI();
     
-    if(typeof showHatchPopup === "function") showHatchPopup(newPokemon, isNewToPokedex);
+    if(typeof showHatchPopup === "function") {
+        showHatchPopup(newPokemon, isNewToPokedex);
+    } else {
+        notify(`🥚 Un magnifique ${nomPokemon} est sorti de l'œuf !`);
+    }
 }
 
-// --- EXPÉDITIONS CORRIGÉES ---
 function startExpedition(pokemonIds, explorationKey) {
     if (typeof EXPLORATIONS === 'undefined' || !EXPLORATIONS[explorationKey]) return;
     
     const exp = EXPLORATIONS[explorationKey];
     const endTime = Date.now() + exp.duration;
 
+    // --- LE BLOC DOIT ÊTRE ICI, DANS LA FONCTION ---
     pokemonIds.forEach(id => {
         let p = gameState.activeTeam.find(p => p.id === id);
         if (p) {
-            // --- NOUVEAU : Perte d'énergie de 1/3 ---
-            if (p.energie >= 1.0) {
-                p.energie = Math.max(0, p.energie - 1.0);
+            if (p.energie > 1) {
+                p.energie = Math.max(0, p.energie - 1);
                 p.onExpedition = true;
                 p.expeditionEnd = endTime;
                 p.explorationKey = explorationKey;
             } else {
-                notify(`${p.name} n'a pas assez d'énergie !`);
+                notify(`${p.name} est trop fatigué !`);
             }
         }
     });
+    // ------------------------------------------------
 
     saveGame();
     if(typeof updateUI === "function") updateUI();
 }
-
 function finishExpedition(pokemonIds, explorationKey) {
     // 1. Mise à jour des Pokémon
     pokemonIds.forEach(id => {
@@ -370,9 +435,12 @@ function finishExpedition(pokemonIds, explorationKey) {
             p.expeditionEnd = null;
             p.explorationKey = null;
             
+            // L'expédition consomme de l'énergie (comme avant)
             p.energie = Math.max(0, p.energie - 1.0);
-            p.bonheur = Math.max(0, p.bonheur - 1.0);
             
+            // Le bonheur NE BOUGE PLUS (supprimé)
+            
+            // Gain d'XP
             p.xp += 50; 
             let xpNeeded = getRequiredXP(p.level);
             while (p.xp >= xpNeeded) { 
@@ -383,18 +451,16 @@ function finishExpedition(pokemonIds, explorationKey) {
         }
     });
 
-    // 2. Gestion des récompenses aléatoires (Correction ici)
+    // 2. Gestion des récompenses avec sauvegarde du prix
     const expData = EXPLORATIONS[explorationKey];
     
-    // On vérifie si la zone possède bien une liste "rewards"
     if (expData && expData.rewards && expData.rewards.length > 0) {
-        
         pokemonIds.forEach(() => {
-            // On tire un objet aléatoire dans le tableau "rewards"
             const randomIndex = Math.floor(Math.random() * expData.rewards.length);
             const itemKey = expData.rewards[randomIndex];
             
-            if (!itemKey) return; // Sécurité
+            if (!itemKey) return;
+            const itemData = ITEMS_CONFIG[itemKey]; // Récupère les infos de l'objet
 
             if (!gameState.inventory) gameState.inventory = [];
             
@@ -403,14 +469,17 @@ function finishExpedition(pokemonIds, explorationKey) {
             if (existingItem) {
                 existingItem.quantity += 1; 
             } else {
-                gameState.inventory.push({ itemKey: itemKey, quantity: 1 });
+                // IMPORTANT : On ajoute le prix ici pour que ton sac l'affiche bien plus tard
+                gameState.inventory.push({ 
+                    itemKey: itemKey, 
+                    quantity: 1,
+                    price: itemData.price || 0 
+                });
             }
             
-            notify(`Expédition : +1 ${itemKey} trouvé !`);
+            notify(`Expédition : +1 ${itemData.name} trouvé !`);
         });
-        
     } else {
-        // Fallback si jamais la zone est mal configurée
         notify("Expédition finie, mais aucun objet trouvé.");
     }
     
@@ -418,90 +487,94 @@ function finishExpedition(pokemonIds, explorationKey) {
     if(typeof updateUI === "function") updateUI();
 }
 
-// --- GESTION DES OBJETS ---
 function useItemOnPokemon(itemKey, pokemonId) {
-    let itemEntry = gameState.inventory.find(i => i.itemKey === itemKey);
-    if (!itemEntry || itemEntry.quantity <= 0) return;
-
     let target = gameState.activeTeam.find(p => p.id === pokemonId);
-    
     if (!target) {
-        notify("Ce Pokémon doit être dans le Ranch pour recevoir un objet !");
+        notify("Ce Pokémon doit être dans le Ranch !");
         return;
     }
 
     const itemData = ITEMS_CONFIG[itemKey];
-    if (itemData.effect === "bonheur") target.bonheur = Math.min(3, target.bonheur + itemData.value);
-    if (itemData.effect === "energie") target.energie = Math.min(3, target.energie + itemData.value);
 
-    itemEntry.quantity--;
-    if (itemEntry.quantity <= 0) {
-        gameState.inventory = gameState.inventory.filter(i => i.itemKey !== itemKey);
+    if (itemData.type === "evolution") { 
+        evolvePokemon(target, itemKey);
+    } 
+    else {
+        let itemEntry = gameState.inventory.find(i => i.itemKey === itemKey);
+        if (!itemEntry || itemEntry.quantity <= 0) return;
+        
+        if (itemData.effect === "bonheur") target.bonheur = Math.min(3, target.bonheur + itemData.value);
+        if (itemData.effect === "energie") target.energie = Math.min(3, target.energie + itemData.value);
+
+        itemEntry.quantity--;
+        if (itemEntry.quantity <= 0) gameState.inventory = gameState.inventory.filter(i => i.itemKey !== itemKey);
+        
+        notify(`✨ ${target.name} a consommé : ${itemData.name} !`);
+        saveGame();
+        updateInventoryUI();
+        if(typeof updateUI === "function") updateUI();
     }
-    
-    notify(`✨ ${target.name} a consommé : ${itemData.name} !`);
-    
-    saveGame();
-    if(typeof updateUI === "function") updateUI();
-    if(typeof updateInventoryUI === "function") updateInventoryUI();
 }
 
-// --- SYSTÈME D'ÉVOLUTION ---
-function evolvePokemon(pokemon) {
+function evolvePokemon(pokemon, itemKey = null) {
     if (typeof EVOLUTIONS === 'undefined' || !EVOLUTIONS[pokemon.name]) {
         notify("Ce Pokémon ne peut pas évoluer !");
         return;
     }
 
     const evoData = EVOLUTIONS[pokemon.name];
+    const conditions = Array.isArray(evoData.condition) ? evoData.condition : [evoData.condition];
+    const nextForms = Array.isArray(evoData.nextForm) ? evoData.nextForm : [evoData.nextForm];
+    
+    let index = -1;
 
-    if (evoData.condition === "item" || (Array.isArray(evoData.condition) && evoData.condition.includes("item"))) {
-        notify("Ce Pokémon évolue avec un objet ! Utilise-le depuis ton Sac.");
+    if (itemKey) {
+        const itemNeeded = Array.isArray(evoData.itemNeeded) ? evoData.itemNeeded : [evoData.itemNeeded];
+        index = itemNeeded.indexOf(itemKey);
+    } else {
+        index = conditions.indexOf("level");
+        let reqLevel = Array.isArray(evoData.levelNeeded) ? (Array.isArray(evoData.levelNeeded) ? evoData.levelNeeded[index] : evoData.levelNeeded) : evoData.levelNeeded;
+        if (index !== -1 && pokemon.level < reqLevel) index = -1;
+    }
+
+    if (index === -1) {
+        let levelIdx = conditions.indexOf("level");
+        if (levelIdx !== -1) {
+            let needed = Array.isArray(evoData.levelNeeded) ? (Array.isArray(evoData.levelNeeded) ? evoData.levelNeeded[levelIdx] : evoData.levelNeeded) : evoData.levelNeeded;
+            notify(`Niveau ${needed} requis pour évoluer ! (Actuel: ${pokemon.level})`);
+        } else {
+            notify("Conditions non remplies pour évoluer !");
+        }
         return;
     }
 
-    if (evoData.condition === "level" || (Array.isArray(evoData.condition) && evoData.condition.includes("level"))) {
+    let oldName = pokemon.name;
+    let nextName = nextForms[index];
+
+    if (POKEDEX_IDS.hasOwnProperty(nextName)) {
+        pokemon.name = nextName;
+        pokemon.image = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${POKEDEX_IDS[nextName]}.gif`;
+        if (!gameState.pokedexUnlocked.includes(pokemon.name)) gameState.pokedexUnlocked.push(pokemon.name);
         
-        let isReady = false;
-        let targetForm = "";
-
-        if (Array.isArray(evoData.nextForm)) {
-            targetForm = evoData.nextForm[Math.floor(Math.random() * evoData.nextForm.length)];
-            let reqLevel = Array.isArray(evoData.levelNeeded) ? evoData.levelNeeded[0] : evoData.levelNeeded;
-            if (pokemon.level >= reqLevel) isReady = true;
-        } else {
-            targetForm = evoData.nextForm;
-            if (pokemon.level >= evoData.levelNeeded) isReady = true;
-        }
-
-        if (isReady) {
-            let oldName = pokemon.name;
-            pokemon.name = targetForm;
-            
-            let newId = POKEDEX_IDS[pokemon.name] || 1;
-            pokemon.image = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${newId}.gif`;
-
-            let isNewToPokedex = false;
-            if (!gameState.pokedexUnlocked.includes(pokemon.name)) {
-                gameState.pokedexUnlocked.push(pokemon.name);
-                isNewToPokedex = true;
+        if (itemKey) {
+            let itemEntry = gameState.inventory.find(i => i.itemKey === itemKey);
+            if (itemEntry) {
+                itemEntry.quantity--;
+                if (itemEntry.quantity <= 0) gameState.inventory = gameState.inventory.filter(i => i.itemKey !== itemKey);
             }
-
-            saveGame();
-            if(typeof updateUI === "function") updateUI();
-            
-            if(typeof showHatchPopup === "function") {
-                showHatchPopup(pokemon, isNewToPokedex);
-                setTimeout(() => {
-                    notify(`✨ ${oldName} a évolué en ${pokemon.name} !`);
-                }, 1000);
-            } else {
-                alert(`✨ Ton Pokémon a évolué en ${pokemon.name} !`);
-            }
-        } else {
-            let needed = Array.isArray(evoData.levelNeeded) ? evoData.levelNeeded[0] : evoData.levelNeeded;
-            notify(`Niveau ${needed} requis pour évoluer ! (Actuel: ${pokemon.level})`);
         }
+        saveGame();
+        if (typeof updateUI === "function") updateUI();
+        
+        if (typeof showHatchPopup === "function") {
+            showHatchPopup(pokemon, true);
+            setTimeout(() => notify(`✨ ${oldName} a évolué en ${pokemon.name} !`), 1000);
+        } else {
+            alert(`✨ ${oldName} a évolué en ${pokemon.name} !`);
+        }
+    } else {
+        console.error("Nom introuvable dans POKEDEX_IDS :", nextName);
+        notify("Erreur : Impossible de trouver " + nextName);
     }
 }
 
@@ -601,7 +674,6 @@ function estCompatible(p1, p2) {
     return p1.name === p2.name;
 }
 
-
 function lancerIncubation() {
     let p1 = gameState.pension[0];
     let p2 = gameState.pension[1];
@@ -619,7 +691,6 @@ function lancerIncubation() {
         return; 
     }
 
-    // On lance directement l'incubation à 0, sans retirer de PO !
     gameState.activeEggIncubation = { progress: 0 };
     notify("🧪 Incubation lancée ! Ton équipe doit maintenant récolter 50 000 PO pour le faire éclore.");
     
@@ -637,7 +708,6 @@ function recupererOeuf() {
     let parent2 = gameState.pension[1];
     let parentCible = (parent1.name === "Métamorph") ? parent2 : parent1;
     
-    // Évolutions d'Évoli
     const eeveelutions = ["Aquali", "Pyroli", "Voltali", "Mentali", "Noctali", "Phyllali", "Givrali", "Nymphali"];
     let nomCible = eeveelutions.includes(parentCible.name) ? "Évoli" : parentCible.name; 
 
@@ -652,8 +722,8 @@ function recupererOeuf() {
         image: imageUrl,
         incomePerMin: Math.floor(parentCible.incomePerMin * (Math.random() * (1.2 - 0.8) + 0.8)), 
         niveauRarete: parentCible.niveauRarete,
-        energie: 3.0,
-        bonheur: 3.0,
+        energie: 3,
+        bonheur: 3,
         level: 1,
         xp: 0,
         talent: talentTire,
@@ -661,7 +731,7 @@ function recupererOeuf() {
     };
 
     gameState.reserve.push(nouveauPokemon);
-    gameState.activeEggIncubation = null; // On vide l'incubateur
+    gameState.activeEggIncubation = null;
     
     if(typeof showHatchPopup === "function") showHatchPopup(nouveauPokemon, false);
     
@@ -702,3 +772,105 @@ document.addEventListener("DOMContentLoaded", () => {
     performGameTick(); 
     if(typeof updateUI === "function") updateUI();
 });
+
+// --- LIBÉRATION MULTIPLE ---
+function libererSelection(idsSelectionnes) {
+    let totalFragments = 0;
+    
+    idsSelectionnes.forEach(id => {
+        let index = gameState.reserve.findIndex(p => p.id === id);
+        if (index > -1) {
+            let p = gameState.reserve.splice(index, 1)[0];
+            const gainsParRarete = { "commun": 5, "peuCommun": 10, "rare": 20, "tresRare": 50, "legendaire": 100 };
+            totalFragments += (gainsParRarete[p.niveauRarete] || 5);
+        }
+    });
+
+    gameState.fragments += totalFragments;
+    notify(`✨ Tu as libéré des Pokémon et gagné ${totalFragments} fragments !`);
+    
+    saveGame();
+    if (typeof updateUI === "function") updateUI();
+}
+
+function toggleSelection(pokemonId) {
+    if (!multiReleaseMode) return;
+    
+    if (selectedForRelease.includes(pokemonId)) {
+        selectedForRelease = selectedForRelease.filter(id => id !== pokemonId);
+    } else {
+        selectedForRelease.push(pokemonId);
+    }
+    updateUI();
+}
+
+function toggleMultiReleaseMode() {
+    multiReleaseMode = !multiReleaseMode;
+    selectedForRelease = [];
+    
+    const status = document.getElementById("release-status");
+    const confirmBtn = document.getElementById("btn-confirm-release");
+    
+    if (status) {
+        status.innerText = multiReleaseMode ? "ON" : "OFF";
+        status.style.color = multiReleaseMode ? "#79eddf" : "#94a3b8"; 
+    }
+    
+    if (confirmBtn) {
+        confirmBtn.style.display = multiReleaseMode ? "inline-block" : "none";
+    }
+    
+    if (typeof updateUI === "function") updateUI(); 
+}
+
+function confirmMultiRelease() {
+    if (selectedForRelease.length === 0) {
+        notify("Aucun Pokémon sélectionné !");
+        toggleMultiReleaseMode();
+        return;
+    }
+
+    // 1. On calcule le total exact de fragments selon la rareté avant de demander confirmation
+    let totalFragments = 0;
+    const gainsParRarete = { "commun": 1, "peuCommun": 5, "rare": 10, "tresRare": 50, "legendaire": 100 };
+
+    gameState.reserve.forEach(m => {
+        if (selectedForRelease.includes(m.id)) {
+            totalFragments += (gainsParRarete[m.niveauRarete] || 5);
+        }
+    });
+
+    // 2. On affiche le bon nombre de fragments dans le message de confirmation
+    if (confirm(`🗑️ Relâcher ces ${selectedForRelease.length} Pokémon contre ${totalFragments} fragment(s) ?`)) {
+        
+        // 3. On retire les Pokémon sélectionnés de la réserve
+        gameState.reserve = gameState.reserve.filter(m => !selectedForRelease.includes(m.id));
+        
+        // 4. SÉCURITÉ : On s'assure que gameState.fragments est bien un nombre (corrige le bug d'affichage)
+        if (typeof gameState.fragments !== 'number' || isNaN(gameState.fragments)) {
+            gameState.fragments = 0;
+        }
+
+        // 5. On ajoute l'argent
+        gameState.fragments += totalFragments;
+        
+        // 6. On ferme proprement le mode de sélection
+        selectedForRelease = [];
+        multiReleaseMode = false;
+        
+        const status = document.getElementById("release-status");
+        const confirmBtn = document.getElementById("btn-confirm-release");
+        if (status) {
+            status.innerText = "OFF";
+            status.style.color = "#94a3b8";
+        }
+        if (confirmBtn) {
+            confirmBtn.style.display = "none";
+        }
+
+        notify(`✨ Pokémon libérés ! Tu as gagné ${totalFragments} fragment(s).`);
+        
+        saveGame();
+        if (typeof updateUI === "function") updateUI();
+    }
+}
