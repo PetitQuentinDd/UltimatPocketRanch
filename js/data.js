@@ -5,7 +5,7 @@ const EXPLORATIONS = {
     foretBaies: {
         name: "Forêt des Baies",
         duration: 60000,
-        rewards: ["baieOran", "baieCeriz", "baieWikia",""],
+        rewards: ["baieOran", "baieCeriz", "baieWikia",],
         description: "Envoie tes Pokémon chercher des baies fraîches."
     },
     grottePierre: {

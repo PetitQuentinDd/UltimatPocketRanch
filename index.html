@@ -22,7 +22,9 @@
             </div>
             <div class="header-items">
                 <button onclick="toggleSac(true)" style="background: #334155; border: 1px solid #475569; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">🎒 Sac</button>
-                <div class="pokeball-btn" onclick="openTab('tab-succes')" title="Objectifs & Réinitialisation"></div>
+                <div class="pokeball-btn" onclick="openTab('tab-succes')" title="Objectifs & Réinitialisation">
+
+                </div>
             </div>
         </div>
 
@@ -71,7 +73,7 @@
                     <div class="progress-bar-bg">
                         <div id="pokedex-progress-fill" class="progress-bar-fill"></div>
                     </div>
-                    <span id="pokedex-count-ratio" class="progress-ratio">0 / 251</span>
+                    <span id="pokedex-count-ratio" class="progress-ratio">0 / 493</span>
                 </div>
                 <div id="pokedex-grid" class="pokedex-grid-layout"></div>
             </div>
@@ -103,6 +105,8 @@
                 <button id="btn-dev-menu" style="display:none; width:100%; background:#7f1d1d; color:white; padding:10px; margin-bottom:15px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;" onclick="ouvrirDevPokedex()">
                     🔧 Mode Dev : Générer un Pokémon
                 </button>
+                <button class="zone-btn" onclick="document.getElementById('import-file').click()">📂 Importer sauvegarde V1</button>
+<input type="file" id="import-file" style="display:none;" accept=".json" onchange="importSaveGame(event)">
                 <div class="section-title">Boutique d'Œufs</div>
                 <div style="display: flex; flex-direction: column; gap: 15px; padding: 10px;">
                     

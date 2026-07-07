@@ -262,3 +262,16 @@ button:disabled { opacity: 0.3 !important; cursor: not-allowed !important; filte
 .pokedex-progress-container{
     color: white;
 }
+/* Empêche le menu contextuel sur les images */
+img {
+    -webkit-touch-callout: none; /* Désactive le menu contextuel sur iOS */
+    -webkit-user-select: none;   /* Désactive la sélection de texte/image */
+    user-select: none;
+    pointer-events: none;        /* Si l'image n'a pas besoin de capturer les clics elle-même */
+}
+
+/* Si vous voulez spécifiquement cibler uniquement les images de Pokémon */
+.monster-card img {
+    pointer-events: auto; /* Laisse le clic passer à travers pour l'évolution */
+    -webkit-touch-callout: none; 
+}

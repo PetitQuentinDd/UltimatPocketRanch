@@ -179,6 +179,60 @@ function saveGame() {
     localStorage.setItem("idleRanchSaveV2", JSON.stringify(gameState));
 }
 
+// Remplacez votre fonction importSaveGame actuelle par celle-ci :
+
+function importSaveGame(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const v1 = JSON.parse(e.target.result);
+            
+            // 1. Récupération des ressources simples
+            gameState.money = v1.money || 0;
+            gameState.fragments = 0; // Pas de fragments en V1, on initialise à 0
+            
+            // 2. Migration du Pokédex
+            gameState.pokedexUnlocked = v1.discoveredPokemon || [];
+
+            // 3. Conversion et migration des Pokémon (Team et Réserve)
+            // On ajoute les champs manquants requis par la V2 (energie, bonheur, talent)
+            const convertirPokemon = (p) => ({
+                id: p.id ? p.id.toString() : Date.now().toString() + Math.random(),
+                name: p.name,
+                image: p.image,
+                incomePerMin: p.incomePerMin || 5,
+                niveauRarete: "commun", // Par défaut
+                energie: 3.0,
+                bonheur: 2.0,
+                level: p.level || 1,
+                xp: p.xp || 0,
+                talent: "Leader",
+                onExpedition: false
+            });
+
+            gameState.activeTeam = (v1.activeTeam || []).map(convertirPokemon);
+            gameState.reserve = (v1.reserve || []).map(convertirPokemon);
+            
+            // 4. Migration de la pension
+            gameState.pension = [
+                v1.pension && v1.pension[0] ? convertirPokemon(v1.pension[0]) : null,
+                v1.pension && v1.pension[1] ? convertirPokemon(v1.pension[1]) : null
+            ];
+
+            saveGame();
+            alert("Sauvegarde importée avec succès ! Vos Pokémon sont là.");
+            location.reload(); // Recharge pour rafraîchir l'interface
+        } catch (error) {
+            console.error("Erreur import :", error);
+            alert("Erreur lors de l'import : le fichier est invalide.");
+        }
+    };
+    reader.readAsText(file);
+}
+
 function loadGame() {
     const oldSave = localStorage.getItem("pokemonBreeder_save");
     const newSave = localStorage.getItem("idleRanchSaveV2");
