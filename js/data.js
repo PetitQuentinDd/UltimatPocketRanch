@@ -5,36 +5,36 @@ const EXPLORATIONS = {
     foretBaies: {
         name: "Forêt des Baies",
         duration: 60000,
-        rewards: ["baieOran", "baieCeriz", "baieWikia",],
+        rewards: ["baieOran", "baieChérim","baiePommo"],
         description: "Envoie tes Pokémon chercher des baies fraîches."
     },
     grottePierre: {
         name: "Grotte Sombre",
         duration: 300000,
-        rewards: ["pierreEau", "pierreFeu", "pierrePlante","pierreFoudre", "pierreLune", "pierreSoleil","pierreNuit"],
+        rewards: ["pierreEau", "pierreFeu", "pierrePlante","pierreFoudre","pierreGlace", "pierreLune", "pierreSoleil","pierreNuit","pierreOvale","pierreAube","pierreEclat"],
         description: "Une grotte où l'on trouve des pierres d'évolution."
     },
     centraleElectrique: {
         name: "Centrale Électrique",
         duration: 600000,
-        rewards: [ "cableLien", "potion", "superPotion", "hyperPotion"],
+        rewards: [ "cableLien", "potion", "superPotion", "hyperPotion","cableLien"],
         description: "Un lieu chargé en électricité et en objets technologiques."
     },
     manoirPokemon : {
         name: "Manoir Pokémon",
         duration: 1200000,
-        rewards:["pierreOvale","pierreAube","pierreEclat","pierreGlace","cableLien","rocheRoyale","peauMetal","ameliorator","ecailleDraco","belEcaille","tissuFauche","dentOcean","ecailleOcean","griffeRasoir","protecteur","électriseur","magmariseur","crocRasoir","cdDouteux"],
+        rewards:["rocheRoyale","peauMetal","ameliorator","ecailleDraco","belEcaille","tissuFauche","dentOcean","ecailleOcean","griffeRasoir","protecteur","électriseur","magmariseur","crocRasoir","cdDouteux"],
         description: "Un lieu où les experiences sur les Pokemons sont courant."
     
     }
 };
 
 const REVENUS_RARETE = {
-    commun: { min: 1, max: 10 },
-    peuCommun: { min: 11, max: 20 },
-    rare: { min: 21, max: 30 },
-    tresRare: { min: 31, max: 40 },
-    legendaire: { min: 60, max: 70 }
+    commun: { min: 21, max: 30 },
+    peuCommun: { min: 31, max: 50 },
+    rare: { min: 51, max: 80 },
+    tresRare: { min: 81, max: 99 },
+    legendaire: { min: 100, max: 250 }
 };
 
 // ==========================================================================
@@ -80,13 +80,13 @@ const POKEDEX_IDS = {
     "Tournegrin": 191, "Héliatronc": 192, "Yanma": 193,"Axoloto": 194, "Maraiste": 195, 
     "Mentali": 196, "Noctali": 197, "Cornèbre": 198, "Roigada": 199,"Feuforêve": 200, 
     "Zarbi": 201, "Qulbutoké": 202, "Girafarig": 203, "Pomdepik": 204, "Forretress": 205,
-    "Insolourdo": 206, "Scarabrute": 207, "Scorplane": 208, "Steelix": 209, "Snubbull": 210, 
-    "Granbull": 211,"Qwilfish": 212, "Cizayox": 213, "Caratroc": 214, "Scarhino": 215, 
-    "Farfuret": 216, "Teddiursa": 217,"Ursaring": 218, "Limagma": 219, "Volcaropod": 220, 
-    "Marcacrin": 221, "Cochignon": 222, "Corayon": 223,"Rémoraid": 224, "Octillery": 225,
-     "Cadoizo": 226, "Démanta": 227, "Airmure": 228, "Malosse": 229,"Démolosse": 230, 
-     "Hyporoi": 231, "Phanpy": 232, "Donphan": 233, "Porygon2": 234, "Cerfrousse": 235,
-    "Debugant":236,"Queulorior": 235, "Kapoera": 237,  "Lippouti": 238, "Élekid": 239,
+    "Insolourdo": 206, "Scorplane": 207, "Steelix": 208, "Snubbull": 209, 
+    "Granbull": 210,"Qwilfish": 211, "Cizayox": 212, "Caratroc": 213, "Scarhino": 214, 
+    "Farfuret": 215, "Teddiursa": 216,"Ursaring": 217, "Limagma": 218, "Volcaropod": 219, 
+    "Marcacrin": 220, "Cochignon": 221, "Corayon": 222,"Rémoraid": 223, "Octillery": 224,
+     "Cadoizo": 225, "Démanta": 226, "Airmure": 227, "Malosse": 228,"Démolosse": 229, 
+     "Hyporoi": 230, "Phanpy": 231, "Donphan": 232, "Porygon2": 233, "Cerfrousse": 234,"Queulorior": 235,
+    "Debugant":236, "Kapoera": 237,  "Lippouti": 238, "Élekid": 239,
      "Magby": 240,"Écrémeuh": 241, "Leuphorie": 242, "Raikou": 243, "Entei": 244,
     "Suicune": 245, "Embrylex": 246,"Ymphect": 247, "Tyranocif": 248, "Lugia": 249, 
       "Ho-Oh": 250,"Celebi": 251,
@@ -143,38 +143,38 @@ const POKEDEX_IDS = {
     "Darkrai":491,"Shaymin":492,"Arceus":493,
 
     // 5ème génération
-    //"Victini":494,"Vipélierre":495,
-    //"Lianaja":496,"Majaspic":497,"Gruikui":498,"Grotichon":499,"Roitiflam":500,
-    //"Moustillon":501,"Mateloutre":502,"Clamiral":503,"Ratentif":504,"Miradar":505,
-    //"Ponchiot":506,"Ponchien":507,"Mastouffe":508,"Chacripan":509,"Léopardus":510,
-    //"Feuillajou":511,"Feuiloutan":512,"Flamajou":513,"Flamoutan":514,"Florajou":515,
-    //"Flotoutan":516,"Munna":517,"Mushana":518,"Poichigeon":519,"Colombeau":520,
-    //"Déflaisan":521, "Zébribon":522, "Zéblitz":523, "Nodulithe":524, "Géolithe":525,
-    //"Gigalithe":526, "Chovsourir":527, "Rhinolove":528, "Rototaupe":529, "Minotaupe":530,
-    //"Nanméouïe":531, "Charpenti":532, "Ouvrifier":533, "Bétochef" : 534, "Tritonde":535,
-    //"Batracné":536, "Crapustule":537, "Judokrak":538, "Karaclée":539, "Larveyette":540,
-    //"Couverdure":541, "Manternel":542, "Venipatte":543, "Scobolide":544, "Brutapode":545,
-   //"Doudouvet":546, "Farfaduvet":547, "Chlorobule":548, "Fragilady":549, "Bargantua":550, 
-   //"Mascaïman":551, "Escroco":552, "Crocorible":553, "Darumarond":554, "Darumacho":555, 
-   //"Maracachi":556, "Crabicoque":557, "Crabaraque":558, "Baggiguane":559, "Baggaïd":560,
-    //"Cryptéro":561, "Tutafeh":562, "Tutankafer":563, "Carapagos":564, "Mégapagos":565, 
-    //"Arkéapti":566, "Aéroptéryx":567, "Miamiasme":568, "Miasmax":569, "Zorua":570, 
-    //"Zoroark":571, "Chinchidou":572, "Pashmilla":573, "Scrutella":574, "Mesmérella":575,
-    //"Sidérella":576, "Nucléos":577, "Méios":578, "Symbios":579, "Couaneton":580,
-    //"Lakmécygne":581, "Sorbébé":582, "Sorboul":583, "Sorbouboul":584, "Vivaldaim":585, 
-    //"Haydaim":586, "Emolga":587, "Carabing":588, "Lançargot":589, "Trompignon":590, 
-    //"Gaulet":591, "Viskuse":592, "Moyade":593, "Mamanbo":594, "Statitik":595,
-    //"Mygavolt":596, "Grindur":597, "Noacier":598, "Tic":599, "Clic":600,
-    //"Cliticlic":601, "Anchwatt":602, "Lampéroie":603, "Ohmassacre":604, "Lewsor":605,
-    // "Neitram":606, "Funécire":607, "Mélancolux":608, "Lugulabre":609, "Coupenotte":610,
-     //"Incisache":611, "Tranchodon":612, "Polarhume":613, "Polagriffe":614, "Hexagel":615,
-    //"Escargaume":616, "Limaspeed":617, "Limonde":618, "Kungfouine":619, "Shaofouine":620,
-    //"Drakkkarmin":621, "Gringolem":622, "Golemastoc":623, "Scalpion":624, "Scalproie":625, 
-    //"Frison":626, "Furaiglon":627, "Gueriaigle":628, "Vostourno":629, "Vaututrice":630,
-     //"Aflamanoir":631, "Fermite":632, "Solochi":633, "Diamat":634, "Trioxhydre":635, 
-    //"Pyronille":636, "Pyrax":637, "Cobaltium":638, "Terrakium":639, "Viridium":640,
-     //"Boréas":641, "Fulguris":642, "Reshiram":643, "Zekrom":644, "Démétéros":645,
-     //"Kyurem":646, "Keldeo":647, "Meloetta":648, "Genesect":649,
+    "Victini":494,"Vipélierre":495,
+    "Lianaja":496,"Majaspic":497,"Gruikui":498,"Grotichon":499,"Roitiflam":500,
+    "Moustillon":501,"Mateloutre":502,"Clamiral":503,"Ratentif":504,"Miradar":505,
+    "Ponchiot":506,"Ponchien":507,"Mastouffe":508,"Chacripan":509,"Léopardus":510,
+    "Feuillajou":511,"Feuiloutan":512,"Flamajou":513,"Flamoutan":514,"Florajou":515,
+    "Flotoutan":516,"Munna":517,"Mushana":518,"Poichigeon":519,"Colombeau":520,
+    "Déflaisan":521, "Zébribon":522, "Zéblitz":523, "Nodulithe":524, "Géolithe":525,
+    "Gigalithe":526, "Chovsourir":527, "Rhinolove":528, "Rototaupe":529, "Minotaupe":530,
+    "Nanméouïe":531, "Charpenti":532, "Ouvrifier":533, "Bétochef" : 534, "Tritonde":535,
+    "Batracné":536, "Crapustule":537, "Judokrak":538, "Karaclée":539, "Larveyette":540,
+    "Couverdure":541, "Manternel":542, "Venipatte":543, "Scobolide":544, "Brutapode":545,
+   "Doudouvet":546, "Farfaduvet":547, "Chlorobule":548, "Fragilady":549, "Bargantua":550, 
+   "Mascaïman":551, "Escroco":552, "Crocorible":553, "Darumarond":554, "Darumacho":555, 
+   "Maracachi":556, "Crabicoque":557, "Crabaraque":558, "Baggiguane":559, "Baggaïd":560,
+    "Cryptéro":561, "Tutafeh":562, "Tutankafer":563, "Carapagos":564, "Mégapagos":565, 
+    "Arkéapti":566, "Aéroptéryx":567, "Miamiasme":568, "Miasmax":569, "Zorua":570, 
+    "Zoroark":571, "Chinchidou":572, "Pashmilla":573, "Scrutella":574, "Mesmérella":575,
+    "Sidérella":576, "Nucléos":577, "Méios":578, "Symbios":579, "Couaneton":580,
+    "Lakmécygne":581, "Sorbébé":582, "Sorboul":583, "Sorbouboul":584, "Vivaldaim":585, 
+    "Haydaim":586, "Emolga":587, "Carabing":588, "Lançargot":589, "Trompignon":590, 
+    "Gaulet":591, "Viskuse":592, "Moyade":593, "Mamanbo":594, "Statitik":595,
+    "Mygavolt":596, "Grindur":597, "Noacier":598, "Tic":599, "Clic":600,
+    "Cliticlic":601, "Anchwatt":602, "Lampéroie":603, "Ohmassacre":604, "Lewsor":605,
+     "Neitram":606, "Funécire":607, "Mélancolux":608, "Lugulabre":609, "Coupenotte":610,
+     "Incisache":611, "Tranchodon":612, "Polarhume":613, "Polagriffe":614, "Hexagel":615,
+    "Escargaume":616, "Limaspeed":617, "Limonde":618, "Kungfouine":619, "Shaofouine":620,
+    "Drakkkarmin":621, "Gringolem":622, "Golemastoc":623, "Scalpion":624, "Scalproie":625, 
+    "Frison":626, "Furaiglon":627, "Gueriaigle":628, "Vostourno":629, "Vaututrice":630,
+     "Aflamanoir":631, "Fermite":632, "Solochi":633, "Diamat":634, "Trioxhydre":635, 
+    "Pyronille":636, "Pyrax":637, "Cobaltium":638, "Terrakium":639, "Viridium": 640,
+     "Boréas":641, "Fulguris":642, "Reshiram":643, "Zekrom":644, "Démétéros":645,
+     "Kyurem":646, "Keldeo":647, "Meloetta":648, "Genesect":649,
 
      //6ème génération
 
@@ -347,6 +347,28 @@ const LISTE_DBPE= {
 
 };
 
+const LISTE_UNYS = {
+    commun: [
+        "Ratentif", "Ponchiot", "Chacripan", "Ratentif", "Poichigeon", "Tritonde", "Larveyette", 
+        "Venipatte", "Doudouvet", "Chlorobule", "Baggiguane", "Carabing", "Tarinor", "Couaneton"
+    ],
+    peuCommun: [
+        "Vipélierre", "Gruikui", "Moustillon", "Chinchidou", "Sorbébé", "Grindur", "Tic", 
+        "Statitik", "Tutafeh", "Miamiasme", "Escargaume", "Zorua", "Cabriolaine"
+    ],
+    rare: [
+        "Mascaïman", "Arkéapti", "Carapagos", "Emolga", "Kungfouine", "Coupenotte", 
+        "Gringolem", "Furaiglon", "Vostourno", "Diadinde", "Frison"
+    ],
+    tresRare: [
+        "Rototaupe", "Batracné", "Judokrak", "Karaclée", "Sorboul", "Funécire", "Polarhume", 
+        "Anchwatt", "Lewsor", "Solochi"
+    ],
+    legendaire: [
+        "Victini", "Cobaltium", "Terrakium", "Viridium", "Boréas", "Fulguris", 
+        "Reshiram", "Zekrom", "Démétéros", "Kyurem", "Keldeo", "Meloetta", "Genesect"
+    ]
+};
 
 // ==========================================================================//
 // DICTIONNAIRE COMPLET DES ÉVOLUTIONS    (a faire la 4eme generation)                                   
@@ -377,6 +399,12 @@ const EVOLUTIONS = {
     "Chimpenfeu": { nextForm: "Simiabraz", condition: "level", levelNeeded: 36 },
     "Tiplouf": { nextForm: "Prinplouf", condition: "level", levelNeeded: 16 },
     "Prinplouf": { nextForm: "Pingoléon", condition: "level", levelNeeded: 36 },
+    "Vipélierre": { nextForm: "Lianaja", condition: "level", levelNeeded: 17 },
+    "Lianaja": { nextForm: "Majaspic", condition: "level", levelNeeded: 36 },
+    "Gruikui": { nextForm: "Grotichon", condition: "level", levelNeeded: 17 },
+    "Grotichon": { nextForm: "Roitiflam", condition: "level", levelNeeded: 36 },
+    "Moustillon": { nextForm: "Mateloutre", condition: "level", levelNeeded: 17 },
+    "Mateloutre": { nextForm: "Clamiral", condition: "level", levelNeeded: 36 },
 
 
     // --- ÉVOLUTIONS PAR NIVEAU (Classiques) ---
@@ -512,6 +540,60 @@ const EVOLUTIONS = {
     "Saquedeneu": { nextForm: "Bouldeneu", condition: "level", levelNeeded: 24},
     "Yanma": { nextForm: "Yanmega", condition: "level", levelNeeded: 33},
     "Cochignon": { nextForm: "Mammochon", condition: "level", levelNeeded: 43},
+    "Ratentif": { nextForm: "Miradar", condition: "level", levelNeeded: 20 },
+    "Ponchiot": { nextForm: "Ponchien", condition: "level", levelNeeded: 16 },
+    "Ponchien": { nextForm: "Mastouffe", condition: "level", levelNeeded: 32 },
+    "Chacripan": { nextForm: "Léopardus", condition: "level", levelNeeded: 20 },
+    "Poichigeon": { nextForm: "Colombeau", condition: "level", levelNeeded: 21 },
+    "Colombeau": { nextForm: "Déflaisan", condition: "level", levelNeeded: 32 },
+    "Zébibron": { nextForm: "Zéblitz", condition: "level", levelNeeded: 27 },
+    "Nodulithe": { nextForm: "Géolithe", condition: "level", levelNeeded: 25 },
+    "Rototaupe": { nextForm: "Minotaupe", condition: "level", levelNeeded: 31 },
+    "Charpenti": { nextForm: "Ouvrifier", condition: "level", levelNeeded: 25 },
+    "Tritonde": { nextForm: "Batracné", condition: "level", levelNeeded: 25 },
+    "Batracné": { nextForm: "Crapustule", condition: "level", levelNeeded: 36 },
+    "Larveyette": { nextForm: "Couverdure", condition: "level", levelNeeded: 20 },
+    "Venipatte": { nextForm: "Scobolide", condition: "level", levelNeeded: 22 },
+    "Scobolide": { nextForm: "Brutapode", condition: "level", levelNeeded: 30 },
+    "Mascaïman": { nextForm: "Escroco", condition: "level", levelNeeded: 29 },
+    "Escroco": { nextForm: "Crocorible", condition: "level", levelNeeded: 40 },
+    "Darumarond": { nextForm: "Darumacho", condition: "level", levelNeeded: 35 },
+    "Crabicoque": { nextForm: "Crabaraque", condition: "level", levelNeeded: 34 },
+    "Baggiguane": { nextForm: "Baggaïd", condition: "level", levelNeeded: 39 },
+    "Tutafeh": { nextForm: "Tutankafer", condition: "level", levelNeeded: 34 },
+    "Carapagos": { nextForm: "Mégapagos", condition: "level", levelNeeded: 37 },
+    "Arkéapti": { nextForm: "Aéroptéryx", condition: "level", levelNeeded: 37 },
+    "Miamiasme": { nextForm: "Miasmax", condition: "level", levelNeeded: 36 },
+    "Zorua": { nextForm: "Zoroark", condition: "level", levelNeeded: 30 },
+    "Scrutella": { nextForm: "Mesmérella", condition: "level", levelNeeded: 32 },
+    "Mesmérella": { nextForm: "Sidérella", condition: "level", levelNeeded: 41 },
+    "Nucléos": { nextForm: "Méios", condition: "level", levelNeeded: 32 },
+    "Méios": { nextForm: "Symbios", condition: "level", levelNeeded: 41 },
+    "Couaneton": { nextForm: "Lakmécygne", condition: "level", levelNeeded: 35 },
+    "Sorbébé": { nextForm: "Sorboul", condition: "level", levelNeeded: 35 },
+    "Sorboul": { nextForm: "Sorbouboul", condition: "level", levelNeeded: 47 },
+    "Vivaldain": { nextForm: "Haydaim", condition: "level", levelNeeded: 34 },
+    "Trompignon": { nextForm: "Gaulet", condition: "level", levelNeeded: 39 },
+    "Viskuse": { nextForm: "Moyade", condition: "level", levelNeeded: 40 },
+    "Statitik": { nextForm: "Mygavolt", condition: "level", levelNeeded: 36 },
+    "Grindur": { nextForm: "Noacier", condition: "level", levelNeeded: 40 },
+    "Tic": { nextForm: "Clic", condition: "level", levelNeeded: 38 },
+    "Clic": { nextForm: "Cliticlic", condition: "level", levelNeeded: 49 },
+    "Anchwatt": { nextForm: "Lampéroie", condition: "level", levelNeeded: 39 },
+    "Lewsor": { nextForm: "Neitram", condition: "level", levelNeeded: 42 },
+    "Funécire": { nextForm: "Mélancolux", condition: "level", levelNeeded: 41 },
+    "Coupenotte": { nextForm: "Incisache", condition: "level", levelNeeded: 38 },
+    "Incisache": { nextForm: "Tranchodon", condition: "level", levelNeeded: 48 },
+    "Polarhume": { nextForm: "Polagriffe", condition: "level", levelNeeded: 37 },
+    "Kungfouine": { nextForm: "Shaofouine", condition: "level", levelNeeded: 50 },
+    "Gringolem": { nextForm: "Golemastoc", condition: "level", levelNeeded: 43 },
+    "Scalpion": { nextForm: "Scalproie", condition: "level", levelNeeded: 52 },
+    "Furaiglon": { nextForm: "Gueriaigle", condition: "level", levelNeeded: 54 },
+    "Vostourno": { nextForm: "Vaututrice", condition: "level", levelNeeded: 54 },
+    "Solochi": { nextForm: "Diamat", condition: "level", levelNeeded: 50 },
+    "Diamat": { nextForm: "Trioxhydre", condition: "level", levelNeeded: 64 },
+    "Pyronille": { nextForm: "Pyrax", condition: "level", levelNeeded: 59 },
+
 
 
 
@@ -557,14 +639,25 @@ const EVOLUTIONS = {
     "Scorplane": { nextForm: "Scorvol",   condition: "item", itemNeeded: "crocRasoir" },
     "Porygon2": { nextForm: "Porygon-Z",   condition: "item", itemNeeded: "cdDouteux" },
     "Tarinor": { nextForm: "Tarinorme",   condition: "item", itemNeeded: "pierreFoudre" },
+    "Feuillajou": { nextForm: "Feuloutan",   condition: "item", itemNeeded: "pierrePlante" },
+    "Flamajou": { nextForm: "Flamoutan",   condition: "item", itemNeeded: "pierreFeu" },
+    "Flotajou": { nextForm: "Flotoutan",   condition: "item", itemNeeded: "pierreEau" },
+    "Munna": { nextForm: "Mushana",   condition: "item", itemNeeded: "pierreLune" },
+    "Doudouvet": { nextForm: "Farfaduvet",   condition: "item", itemNeeded: "pierreSoleil" },
+    "Chlorobule": { nextForm: "Fragilady",   condition: "item", itemNeeded: "pierreSoleil" },
+    "Chinchidou": { nextForm: "Pashmilla",   condition: "item", itemNeeded: "pierreEclat" },
+    "Lampéroie": { nextForm: "Ohmassacre",   condition: "item", itemNeeded: "pierreFoudre" },
+    "Mélancolux": { nextForm: "Lugalabre",   condition: "item", itemNeeded: "pierreNuit" },
 
-    
+
+
+
 
     // --- ÉVOLUTIONS MULTIPLES (ÉVOLI ET RAMOLOSS) ---
     "Évoli": { 
-        nextForm: ["Aquali", "Voltali", "Pyroli","Mentali","Noctali","Phyllali","Grivrali"], 
+        nextForm: ["Aquali", "Voltali", "Pyroli","Mentali","Noctali","Phyllali","Givrali"], 
         condition: ["item", "item", "item","item","item","item","item"], 
-        itemNeeded: ["pierreEau", "pierreFoudre", "pierreFeu","pierreLune", "pierreSoleil","pierrePlante","pierreGlace"] 
+        itemNeeded: ["pierreEau", "pierreFoudre", "pierreFeu","pierreSoleil", "pierreLune","pierrePlante","pierreGlace"] 
     },
     "Ramoloss": { 
         nextForm: ["Flagadoss", "Roigada"], 
@@ -607,7 +700,11 @@ const EVOLUTIONS = {
     "Gravalanch": { nextForm: "Grolem",     condition: "item", itemNeeded: "cableLien" },
     "Fantominus": { nextForm: "Spectrum",   condition: "level", levelNeeded: 25 },
     "Spectrum":   { nextForm: "Ectoplasma", condition: "item", itemNeeded: "cableLien" },
-    
+    "Géolithe":   { nextForm: "Gigalithe", condition: "item", itemNeeded: "cableLien" },
+    "Ouvrifier":   { nextForm: "Bétochef", condition: "item", itemNeeded: "cableLien" },
+    "Carabing":   { nextForm: "Lançargot", condition: "item", itemNeeded: "cableLien" },
+    "Escargaume":   { nextForm: "Limaspeed", condition: "item", itemNeeded: "cableLien" },
+
 
     // Évolutions par niveau de "Bébé" ou spécial
     "Debugant": { nextForm: ["Kicklee", "Tygnon", "Kapoera"], condition: ["level","level","level"], levelNeeded: [20,20,20] },
@@ -622,7 +719,8 @@ const EVOLUTIONS = {
     "Mime Jr.": { nextForm: "M.Mime", condition: "level", levelNeeded: 21 },
     "Goinfrex": { nextForm: "Ronflex", condition: "level", levelNeeded: 21 },
     "Babimanta": { nextForm: "Démenta", condition: "level", levelNeeded: 17 },
-    
+    "Chovsourir": { nextForm: "Rhinolove", condition: "level", levelNeeded: 23 },
+    "Couverdure": { nextForm: "Manternel", condition: "level", levelNeeded: 31 },
 };
 
 // ==========================================================================
@@ -630,44 +728,44 @@ const EVOLUTIONS = {
 // ==========================================================================
 const ITEMS_CONFIG = {
     // --- OBJETS D'ÉVOLUTION ---
-    pierreEau:    { name: "Pierre Eau",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/water-stone.png", price: 1000 },
-    pierreFeu:    { name: "Pierre Feu",  type:"evolution",  image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/fire-stone.png", price: 1000 },
-    pierreFoudre: { name: "Pierre Foudre", type:"evolution",image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png", price: 1000 },
-    pierrePlante: { name: "Pierre Plante", type:"evolution",image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leaf-stone.png", price: 1000 },
-    pierreLune:   { name: "Pierre Lune", type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/moon-stone.png", price: 1500 },
-    pierreSoleil: { name: "Pierre Soleil",type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sun-stone.png", price: 1500 },
-    pierreNuit:    { name: "Pierre Nuit",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dusk-stone.png", price: 1800 },
-    pierreOvale:    { name: "Pierre Ovale",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/oval-stone.png", price: 1800 },
-    pierreAube:     {name: "Pierre Aube", type:"evolution",image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dawn-stone.png", price: 2500 },
-    pierreEclat:    {name: "Pierre Eclat",type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/shiny-stone.png", price: 2500 },
-    pierreGlace:    { name: "Pierre Glace",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ice-stone.png", price: 1000 },
-    cableLien:    { name: "Câble Lien",  type:"evolution",  image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/link-cable.png", price: 2500 },
-    rocheRoyale:  { name: "Roche Royale", type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/kings-rock.png", price: 2000 },
-    peauMetal:    { name: "Peau Métal",  type:"evolution",  image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/metal-coat.png", price: 2500 },
-    ameliorator:  { name: "Améliorator", type:"evolution",  image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/up-grade.png", price: 2500 },
-    ecailleDraco: { name: "Écaille Draco",type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dragon-scale.png", price: 2500 },
-    belEcaille: { name: "Bel'Écaille",type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/prism-scale.png", price: 2500 },
-    tissuFauche: { name: "Tissu Fauche",type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/reaper-cloth.png", price: 2500 },
-    dentOcean:{ name:"Dent Océan", type :"evolution",image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/deep-sea-tooth.png", price: 1500 },
-    ecailleOcean:{ name: "Écaille Océan", type: "evolution",image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/deep-sea-scale.png", price: 1500 },
-    griffeRasoir:    { name: "Griffe Rasoir",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razor-claw.png", price: 3200 },
-    protecteur:    { name: "Protecteur",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/protector.png", price: 3200 },
-    électriseur:    { name: " Électriseur ",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/electirizer.png", price: 3200 },
-    magmariseur:    { name: " Magmariseur ",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/magmarizer.png", price: 3200 },
-    crocRasoir:    { name: "Croc Rasoir",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razor-fang.png", price: 1000 },
-    cdDouteux:    { name: "CD Douteux",   type:"evolution", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dubious-disc.png", price: 5000 },
+    pierreEau:    { name: "Pierre Eau",   type:"evolution", image: "https://www.pokepedia.fr/images/2/2a/Pierre_Eau-CA.png", price: 1000, categorie: "evolution" },
+    pierreFeu:    { name: "Pierre Feu",  type:"evolution",  image: "https://www.pokepedia.fr/images/6/6c/Pierre_Feu-CA.png", price: 1000 , categorie: "evolution"},
+    pierreFoudre: { name: "Pierre Foudre", type:"evolution",image: "https://www.pokepedia.fr/images/e/ea/Pierre_Foudre-CA.png", price: 1000 , categorie: "evolution"},
+    pierrePlante: { name: "Pierre Plante", type:"evolution",image: "https://www.pokepedia.fr/images/5/52/Pierre_Plante-CA.png", price: 1000 , categorie: "evolution"},
+    pierreLune:   { name: "Pierre Lune", type:"evolution", image: "https://www.pokepedia.fr/images/3/34/Pierre_Lune-CA.png", price: 1500 , categorie: "evolution"},
+    pierreSoleil: { name: "Pierre Soleil",type:"evolution", image: "https://www.pokepedia.fr/images/a/a7/Pierre_Soleil-CA.png", price: 1500, categorie: "evolution" },
+    pierreNuit:    { name: "Pierre Nuit",   type:"evolution", image: "https://www.pokepedia.fr/images/0/09/Pierre_Nuit-CA.png", price: 1800 , categorie: "evolution"},
+    pierreOvale:    { name: "Pierre Ovale",   type:"evolution", image: "https://www.pokepedia.fr/images/a/a5/Pierre_Ovale-CA.png", price: 1800, categorie: "evolution" },
+    pierreAube:     {name: "Pierre Aube", type:"evolution",image: "https://www.pokepedia.fr/images/8/81/Pierre_Aube-CA.png", price: 2500, categorie: "evolution" },
+    pierreEclat:    {name: "Pierre Eclat",type:"evolution", image: "https://www.pokepedia.fr/images/8/86/Pierre_%C3%89clat-CA.png", price: 2500 , categorie: "evolution"},
+    pierreGlace:    { name: "Pierre Glace",   type:"evolution", image: "https://www.pokepedia.fr/images/3/3e/Pierre_Glace-CA.png", price: 1000 , categorie: "evolution"},
+    cableLien:    { name: "Câble Lien",  type:"evolution",  image: "https://www.pokepedia.fr/images/f/f5/Miniature_Fil_de_Liaison_LPA.png", price: 2500, categorie: "evolution" },
+    rocheRoyale:  { name: "Roche Royale", type:"evolution", image: "https://www.pokepedia.fr/images/7/7a/Roche_Royale-CA.png", price: 2000 , categorie: "evolution"},
+    peauMetal:    { name: "Peau Métal",  type:"evolution",  image: "https://www.pokepedia.fr/images/5/56/Miniature_Peau_M%C3%A9tal_LPZA.png", price: 2500 , categorie: "evolution"},
+    ameliorator:  { name: "Améliorator", type:"evolution",  image: "https://www.pokepedia.fr/images/0/08/Am%C3%A9liorator-CA.png", price: 2500 , categorie: "evolution"},
+    ecailleDraco: { name: "Écaille Draco",type:"evolution", image: "https://www.pokepedia.fr/images/d/d1/Sprite_%C3%89caille_Draco_GO.png", price: 2500 , categorie: "evolution"},
+    belEcaille: { name: "Bel'Écaille",type:"evolution", image: "https://www.pokepedia.fr/images/c/cf/Bel%27%C3%89caille-CA.png", price: 2500 , categorie: "evolution"},
+    tissuFauche: { name: "Tissu Fauche",type:"evolution", image: "https://www.pokepedia.fr/images/8/81/Tissu_Fauche-CA.png", price: 2500 , categorie: "evolution"},
+    dentOcean:{ name:"Dent Océan", type :"evolution",image: "https://www.pokepedia.fr/images/b/b5/Miniature_Dent_Oc%C3%A9an_DEPS.png", price: 1500 , categorie: "evolution"},
+    ecailleOcean:{ name: "Écaille Océan", type: "evolution",image: "https://www.pokepedia.fr/images/7/70/Miniature_%C3%89caille_Oc%C3%A9an_DEPS.png", price: 1500 , categorie: "evolution"},
+    griffeRasoir:    { name: "Griffe Rasoir",   type:"evolution", image: "https://www.pokepedia.fr/images/7/73/Griffe_Rasoir-CA.png", price: 3200 , categorie: "evolution"},
+    protecteur:    { name: "Protecteur",   type:"evolution", image: "https://www.pokepedia.fr/images/5/5f/Miniature_Protecteur_EV.png", price: 3200, categorie: "evolution" },
+    électriseur:    { name: " Électriseur ",   type:"evolution", image: "https://www.pokepedia.fr/images/1/10/Miniature_%C3%89lectriseur_EV.png", price: 3200, categorie: "evolution" },
+    magmariseur:    { name: " Magmariseur ",   type:"evolution", image: "https://www.pokepedia.fr/images/5/52/Miniature_Magmariseur_EV.png", price: 3200 , categorie: "evolution"},
+    crocRasoir:    { name: "Croc Rasoir",   type:"evolution", image: "https://www.pokepedia.fr/images/8/8d/Croc_Rasoir-CA.png", price: 1000 , categorie: "evolution"},
+    cdDouteux:    { name: "CD Douteux",   type:"evolution", image: "https://www.pokepedia.fr/images/3/3e/Miniature_CD_Douteux_LPZA.png", price: 5000 , categorie: "evolution"},
    
 
 
     // --- BAIES ---
-    baieOran:     { name: "Baie Oran",     effect: "bonheur", value: 1, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/oran-berry.png", price: 500 },
-    baieCeriz:    { name: "Baie Ceriz",    effect: "bonheur", value: 2, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/cheri-berry.png", price: 1000 },
-    baieWikia:    { name: "Baie Wikia",    effect: "bonheur", value: 3, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/wiki-berry.png", price: 2000 },
+    baieOran:     { name: "Baie Oran",     effect: "bonheur", value: 10, image: "https://www.pokepedia.fr/images/b/bf/Miniature_Baie_Oran_LPZA.png?20251015154719", price: 500, categorie: "baies" },
+    baiePommo:    { name: "Baie Pommo",    effect: "bonheur", value: 20, image: "https://www.pokepedia.fr/images/2/2a/Miniature_Baie_Pommo_EV.png?20231228190649", price: 1000 , categorie: "baies"},
+    baieChérim:    { name: "Baie Chérim",    effect: "bonheur", value: 30, image: "https://www.pokepedia.fr/images/2/2d/Miniature_Baie_Ch%C3%A9rim_EV.png?20231228190605", price: 2000, categorie: "baies" },
     
     // --- POTIONS ---
-    potion:       { name: "Potion",        effect: "energie", value: 1, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png", price: 500 },
-    superPotion:  { name: "Super Potion",  effect: "energie", value: 2, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/super-potion.png", price: 1000 },
-    hyperPotion:  { name: "Hyper Potion",  effect: "energie", value: 3, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hyper-potion.png", price: 2000 }
+    potion:       { name: "Potion",        effect: "energie", value: 1, image: "https://www.pokepedia.fr/images/d/d6/Miniature_Potion_LPZA.png", price: 500 , categorie: "soins"},
+    superPotion:  { name: "Super Potion",  effect: "energie", value: 2, image: "https://www.pokepedia.fr/images/8/83/Miniature_Super_Potion_LPZA.png", price: 1000 , categorie: "soins"},
+    hyperPotion:  { name: "Hyper Potion",  effect: "energie", value: 3, image: "https://www.pokepedia.fr/images/0/04/Miniature_Hyper_Potion_LPZA.png", price: 2000, categorie: "soins"}
 };
 
 // ==========================================================================

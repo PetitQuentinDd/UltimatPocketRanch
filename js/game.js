@@ -12,30 +12,54 @@ let gameState = {
     pokedexUnlocked: [],
     inventory: [],
     pension: [null, null],
-    activeEggIncubation: null
+    activeEggIncubation: null,
+    dailyQuests: [],
+    lastQuestReset: new Date().toDateString()
 };
+
+function genererQuetesJournalieres() {
+    const POOLS = [
+        { type: 'release', desc: 'Relâcher 3 Pokémon', goal: 3, reward: 10 },
+        { type: 'hatch', desc: 'Faire éclore 1 œuf', goal: 1, reward: 10 },
+        { type: 'evolve', desc: 'Faire évoluer 1 Pokémon', goal: 1, reward: 10 },
+        { type: 'collect', desc: 'Récolter 5000 PO', goal: 5000, reward: 10 }
+    ];
+
+    // Mélange le pool pour avoir du hasard
+    let shuffled = POOLS.sort(() => 0.5 - Math.random());
+    
+    // On en prend exactement 3 et on initialise "claimed"
+    gameState.dailyQuests = shuffled.slice(0, 3).map((q, index) => ({
+        ...q,
+        id: index,
+        progress: 0,
+        completed: false,
+        claimed: false // <-- TRÈS IMPORTANT POUR LE BOUTON VERT/GRIS
+    }));
+    
+    gameState.lastQuestReset = new Date().toDateString();
+    saveGame();
+}
 
 let multiReleaseMode = false;
 let selectedForRelease = [];
 let sellMode = false;
-let selectedForSale = []; // Stocke les itemKey sélectionnés
+let selectedForSale = [];
 
 function toggleSellMode() {
     sellMode = !sellMode;
-    selectedForSale = []; // Reset si on quitte le mode
+    selectedForSale = [];
     updateInventoryUI();
 }
 
 function toggleItemSelection(itemKey) {
     if (!sellMode) return;
-    
-    // On ajoute ou on retire l'objet de la sélection
     if (selectedForSale.includes(itemKey)) {
         selectedForSale = selectedForSale.filter(k => k !== itemKey);
     } else {
         selectedForSale.push(itemKey);
     }
-    updateInventoryUI(); // Rafraîchit pour voir les bordures
+    updateInventoryUI();
 }
 
 function confirmSale() {
@@ -56,6 +80,7 @@ function confirmSale() {
     });
 
     gameState.money += totalGain;
+    if (totalGain > 0) verifierQuetes('collect', totalGain); // <-- AJOUT POUR LA QUÊTE
     notify(`💰 Vente validée : +${totalGain} PO !`);
     
     selectedForSale = [];
@@ -65,25 +90,21 @@ function confirmSale() {
     if(typeof updateUI === "function") updateUI();
 }
 
-// --- RACCOURCI POUR LES NOTIFICATIONS ---
 function notify(msg) {
     if (typeof showToast === "function") showToast(msg);
     else alert(msg);
 }
 
-// --- COURBE D'EXPÉRIENCE PROCÉDURALE ---
 function getRequiredXP(level) {
     return 100 + ((level - 1) * 50);
 }
 
-// --- MOTEUR DE TEMPS (Gère le Hors Ligne & les Expéditions) ---
 setInterval(performGameTick, 1000); 
 
 function performGameTick() {
     const now = Date.now();
     if (!gameState.lastTick) gameState.lastTick = now;
 
-    // 1. VÉRIFICATION DES EXPÉDITIONS
     let expeditionFinished = false;
     let finishedIdsByKey = {};
     gameState.activeTeam.forEach(p => {
@@ -98,62 +119,47 @@ function performGameTick() {
         expeditionFinished = true;
     });
 
-    // 2. GESTION DU TEMPS ET RESSENTI
     const elapsedMs = now - gameState.lastTick;
     const ticksToProcess = Math.floor(elapsedMs / 15000); 
 
     if (ticksToProcess > 0) {
         let totalIncome = 0;
-        
-        // Calcul du temps écoulé total en secondes
         const totalSecondsAdded = ticksToProcess * 15;
         const oldTotalSeconds = gameState.totalSeconds || 0;
         gameState.totalSeconds = oldTotalSeconds + totalSecondsAdded;
 
-        // --- A. GESTION DE L'ÉQUIPE ACTIVE (Revenus, XP) ---
         gameState.activeTeam.forEach(m => {
             if (!m.onExpedition) {
-                // Revenus et XP
                 totalIncome += (calculateTickIncome(m) / 4) * ticksToProcess;
                 m.xp += (25 * ticksToProcess); 
-                
-                // Niveau
                 let xpNeeded = getRequiredXP(m.level);
                 while (m.xp >= xpNeeded) {
                     m.xp -= xpNeeded;
                     m.level++;
                     xpNeeded = getRequiredXP(m.level);
                 }
-                
-                // LE BONHEUR NE BAISSE PLUS DU TOUT ICI !
             }
         });
 
-        // --- B. GESTION DE LA RÉSERVE (Régénération d'Énergie) ---
-        // Le maximum d'énergie est 3. On veut que ça se remplisse en 1 heure (3600 secondes).
         const energieGagnee = 3 * (totalSecondsAdded / 3600);
         
         gameState.reserve.forEach(m => {
-            // 1. Assurer que l'énergie est un nombre
-    if (typeof m.energie !== 'number') m.energie = 0;
-    
-    // 2. Si le Pokémon a moins de 3 points
-    if (m.energie < 3) {
-        // On ajoute l'énergie uniquement pour le temps passé
-        // 1 point toutes les 600s (10 min) = 0.00166 par seconde
-        // Pour éviter les bugs, on fait l'addition très simplement :
-        m.energie += (0.00166 * totalSecondsAdded);
-        
-        // 3. Plafond à 3
-        if (m.energie > 3) m.energie = 3;
-    }
+            if (typeof m.energie !== 'number') m.energie = 0;
+            if (m.energie < 3) {
+                m.energie += (0.00166 * totalSecondsAdded);
+                if (m.energie > 3) m.energie = 3;
+            }
         });
 
-        // Garde uniquement le reste des secondes
         gameState.totalSeconds = gameState.totalSeconds % 300;
         gameState.money += totalIncome;
         
-        // --- PROGRESSION DE L'INCUBATEUR ---
+        // --- AJOUT POUR LA QUÊTE ICI ---
+        if (totalIncome > 0) {
+            verifierQuetes('collect', totalIncome);
+        }
+        // -------------------------------
+        
         if (gameState.activeEggIncubation && totalIncome > 0) {
             gameState.activeEggIncubation.progress += totalIncome;
         }
@@ -164,7 +170,7 @@ function performGameTick() {
         if (!expeditionFinished && typeof updateUI === "function") updateUI();
     }
 }
-// --- CALCUL DES REVENUS ---
+
 function calculateTickIncome(m) {
     let income = m.incomePerMin + (m.level - 1);
     const multiBonheur = [0.5, 1.0, 1.5, 2.0];
@@ -174,12 +180,9 @@ function calculateTickIncome(m) {
     return Math.floor(income);
 }
 
-// --- SAUVEGARDE ET CHARGEMENT ---
 function saveGame() {
     localStorage.setItem("idleRanchSaveV2", JSON.stringify(gameState));
 }
-
-// Remplacez votre fonction importSaveGame actuelle par celle-ci :
 
 function importSaveGame(event) {
     const file = event.target.files[0];
@@ -190,21 +193,16 @@ function importSaveGame(event) {
         try {
             const v1 = JSON.parse(e.target.result);
             
-            // 1. Récupération des ressources simples
             gameState.money = v1.money || 0;
-            gameState.fragments = 0; // Pas de fragments en V1, on initialise à 0
-            
-            // 2. Migration du Pokédex
+            gameState.fragments = 0; 
             gameState.pokedexUnlocked = v1.discoveredPokemon || [];
 
-            // 3. Conversion et migration des Pokémon (Team et Réserve)
-            // On ajoute les champs manquants requis par la V2 (energie, bonheur, talent)
             const convertirPokemon = (p) => ({
                 id: p.id ? p.id.toString() : Date.now().toString() + Math.random(),
                 name: p.name,
                 image: p.image,
-                incomePerMin: p.incomePerMin || 5,
-                niveauRarete: "commun", // Par défaut
+                incomePerMin: p.incomePerMin || 80,
+                niveauRarete: "Echange",
                 energie: 3.0,
                 bonheur: 2.0,
                 level: p.level || 1,
@@ -216,7 +214,6 @@ function importSaveGame(event) {
             gameState.activeTeam = (v1.activeTeam || []).map(convertirPokemon);
             gameState.reserve = (v1.reserve || []).map(convertirPokemon);
             
-            // 4. Migration de la pension
             gameState.pension = [
                 v1.pension && v1.pension[0] ? convertirPokemon(v1.pension[0]) : null,
                 v1.pension && v1.pension[1] ? convertirPokemon(v1.pension[1]) : null
@@ -224,7 +221,7 @@ function importSaveGame(event) {
 
             saveGame();
             alert("Sauvegarde importée avec succès ! Vos Pokémon sont là.");
-            location.reload(); // Recharge pour rafraîchir l'interface
+            location.reload(); 
         } catch (error) {
             console.error("Erreur import :", error);
             alert("Erreur lors de l'import : le fichier est invalide.");
@@ -251,7 +248,8 @@ function loadGame() {
 
 function createNewGame() {
     gameState = {
-        money: 5000, 
+        money: 50000, 
+        fragments: 10,
         activeTeam: [], 
         reserve: [], 
         lastTick: Date.now(), 
@@ -259,9 +257,15 @@ function createNewGame() {
         pokedexUnlocked: [], 
         inventory: [],
         pension: [null, null],
-        activeEggIncubation: null
+        activeEggIncubation: null,
+        dailyQuests: [],
+        lastQuestReset: new Date().toDateString()
     };
+
+    genererQuetesJournalieres();
+
     saveGame();
+
     const starterModal = document.getElementById('starter-modal');
     if (starterModal && gameState.starterChosen === false) {
         starterModal.style.display = 'flex';
@@ -289,12 +293,11 @@ function migrateOldSave(oldData) {
     return newData;
 }
 
-// --- GESTION DES POKÉMON ---
 function chooseStarter(pokemonName) {
     const starters = {
-        "Bulbizarre": { name: "Bulbizarre", type: "Plante", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/1.gif", incomePerMin: 5 },
-        "Salamèche": { name: "Salamèche", type: "Feu", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/4.gif", incomePerMin: 5 },
-        "Carapuce": { name: "Carapuce", type: "Eau", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/7.gif", incomePerMin: 5 }
+        "Bulbizarre": { name: "Bulbizarre", type: "Plante", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/1.gif", incomePerMin: 100 },
+        "Salamèche": { name: "Salamèche", type: "Feu", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/4.gif", incomePerMin: 100 },
+        "Carapuce": { name: "Carapuce", type: "Eau", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/7.gif", incomePerMin: 100 }
     };
 
     const choice = starters[pokemonName];
@@ -360,19 +363,17 @@ function switchZone(id, currentLocation) {
     if(typeof updateUI === "function") updateUI();
 }
 
-// --- ACHAT D'OEUFS (VERSION DATA-DRIVEN SÉCURISÉE) ---
 function buyEgg(region) {
-    console.log("Achat demandé pour la région :", region);
-
     const PRIX_REGION = { 
-        "kanto": 2500, "johto": 5000, "hoenn": 10000, "sinnoh": 15000, 
+        "kanto": 2500, "johto": 5000, "hoenn": 10000, "sinnoh": 15000, "unys" : 20000
     };
     
     const LISTES_REGION = {
         "kanto": typeof LISTE_KANTO !== 'undefined' ? LISTE_KANTO : null,
         "johto": typeof LISTE_HGSS !== 'undefined' ? LISTE_HGSS : null,
         "hoenn": typeof LISTE_ROSA !== 'undefined' ? LISTE_ROSA : null,
-        "sinnoh": typeof LISTE_DBPE !== 'undefined' ? LISTE_DBPE : null
+        "sinnoh": typeof LISTE_DBPE !== 'undefined' ? LISTE_DBPE : null,
+        "unys" : typeof LISTE_UNYS !== 'undefined' ? LISTE_UNYS : null
     };
 
     const regionKey = region ? region.toLowerCase() : "kanto";
@@ -381,7 +382,6 @@ function buyEgg(region) {
 
     if (!listeObj) {
         notify("Boutique fermée ou données introuvables pour : " + regionKey);
-        console.error("Erreur : La liste pour", regionKey, "n'est pas chargée.");
         return;
     }
 
@@ -392,8 +392,8 @@ function buyEgg(region) {
 
     let roll = Math.random() * 100;
     let rarete = "commun";
-    if (roll > 99) rarete = "legendaire";
-    else if (roll > 95) rarete = "tresRare";
+    if (roll > 97) rarete = "legendaire";
+    else if (roll > 90) rarete = "tresRare";
     else if (roll > 85) rarete = "rare";
     else if (roll > 60) rarete = "peuCommun";
 
@@ -402,10 +402,7 @@ function buyEgg(region) {
     if (!listePoke || listePoke.length === 0) {
         rarete = "commun";
         listePoke = listeObj["commun"];
-        if (!listePoke || listePoke.length === 0) {
-            notify("Erreur critique : Aucun Pokémon dans la liste de cette région.");
-            return;
-        }
+        if (!listePoke || listePoke.length === 0) return;
     }
 
     gameState.money -= cost;
@@ -445,6 +442,8 @@ function buyEgg(region) {
         isNewToPokedex = true;
     }
 
+    verifierQuetes('hatch', 1); // <-- AJOUT POUR LA QUÊTE
+
     saveGame();
     if(typeof updateUI === "function") updateUI();
     
@@ -460,41 +459,40 @@ function startExpedition(pokemonIds, explorationKey) {
     
     const exp = EXPLORATIONS[explorationKey];
     const endTime = Date.now() + exp.duration;
+    
+    let expStarted = false;
 
-    // --- LE BLOC DOIT ÊTRE ICI, DANS LA FONCTION ---
     pokemonIds.forEach(id => {
         let p = gameState.activeTeam.find(p => p.id === id);
         if (p) {
-            if (p.energie > 1) {
+            if (p.energie >= 1) {
                 p.energie = Math.max(0, p.energie - 1);
                 p.onExpedition = true;
                 p.expeditionEnd = endTime;
                 p.explorationKey = explorationKey;
+                expStarted = true;
             } else {
-                notify(`${p.name} est trop fatigué !`);
+                notify(`${p.name} est trop fatigué ! (Énergie < 1)`);
             }
         }
     });
-    // ------------------------------------------------
+
+    if (expStarted) {
+        notify(`🚀 L'expédition vers ${exp.name} a commencé !`);
+    }
 
     saveGame();
     if(typeof updateUI === "function") updateUI();
 }
+
 function finishExpedition(pokemonIds, explorationKey) {
-    // 1. Mise à jour des Pokémon
     pokemonIds.forEach(id => {
         let p = gameState.activeTeam.find(p => p.id === id);
         if (p) {
             p.onExpedition = false;
             p.expeditionEnd = null;
             p.explorationKey = null;
-            
-            // L'expédition consomme de l'énergie (comme avant)
             p.energie = Math.max(0, p.energie - 1.0);
-            
-            // Le bonheur NE BOUGE PLUS (supprimé)
-            
-            // Gain d'XP
             p.xp += 50; 
             let xpNeeded = getRequiredXP(p.level);
             while (p.xp >= xpNeeded) { 
@@ -505,7 +503,6 @@ function finishExpedition(pokemonIds, explorationKey) {
         }
     });
 
-    // 2. Gestion des récompenses avec sauvegarde du prix
     const expData = EXPLORATIONS[explorationKey];
     
     if (expData && expData.rewards && expData.rewards.length > 0) {
@@ -514,7 +511,12 @@ function finishExpedition(pokemonIds, explorationKey) {
             const itemKey = expData.rewards[randomIndex];
             
             if (!itemKey) return;
-            const itemData = ITEMS_CONFIG[itemKey]; // Récupère les infos de l'objet
+            const itemData = ITEMS_CONFIG[itemKey]; 
+
+            if (!itemData) {
+                console.error("Objet manquant dans ITEMS_CONFIG :", itemKey);
+                return;
+            }
 
             if (!gameState.inventory) gameState.inventory = [];
             
@@ -523,14 +525,12 @@ function finishExpedition(pokemonIds, explorationKey) {
             if (existingItem) {
                 existingItem.quantity += 1; 
             } else {
-                // IMPORTANT : On ajoute le prix ici pour que ton sac l'affiche bien plus tard
                 gameState.inventory.push({ 
                     itemKey: itemKey, 
                     quantity: 1,
                     price: itemData.price || 0 
                 });
             }
-            
             notify(`Expédition : +1 ${itemData.name} trouvé !`);
         });
     } else {
@@ -617,6 +617,7 @@ function evolvePokemon(pokemon, itemKey = null) {
                 if (itemEntry.quantity <= 0) gameState.inventory = gameState.inventory.filter(i => i.itemKey !== itemKey);
             }
         }
+        verifierQuetes('evolve', 1);
         saveGame();
         if (typeof updateUI === "function") updateUI();
         
@@ -632,7 +633,6 @@ function evolvePokemon(pokemon, itemKey = null) {
     }
 }
 
-// --- SYSTÈME DE PENSION ---
 let slotEnCoursDeSelection = null;
 
 function gererClicPension(slotIndex) {
@@ -737,7 +737,7 @@ function lancerIncubation() {
         return; 
     }
     if (!estCompatible(p1, p2)) { 
-        notify("❌ Ces Pokémon ne sont pas compatibles ! (Même espèce requise, ou Métamorph. Légendaires exclus)."); 
+        notify("❌ Ces Pokémon ne sont pas compatibles !"); 
         return; 
     }
     if (gameState.activeEggIncubation) { 
@@ -788,7 +788,7 @@ function recupererOeuf() {
     gameState.activeEggIncubation = null;
     
     if(typeof showHatchPopup === "function") showHatchPopup(nouveauPokemon, false);
-    
+    verifierQuetes('hatch', 1);
     saveGame(); 
     if(typeof updateUI === "function") updateUI();
 }
@@ -811,7 +811,6 @@ function rafraichirPensionVisuelle() {
     }
 }
 
-// --- RÉINITIALISATION DU JEU ---
 function hardResetGame() {
     if (confirm("🚨 ATTENTION ! Veux-tu vraiment effacer toute ta partie ? Tu vas perdre tous tes Pokémon et tes PO ! C'est irréversible.")) {
         localStorage.removeItem("idleRanchSaveV2");
@@ -820,32 +819,11 @@ function hardResetGame() {
     }
 }
 
-// --- DÉMARRAGE ---
 document.addEventListener("DOMContentLoaded", () => {
     loadGame();
     performGameTick(); 
     if(typeof updateUI === "function") updateUI();
 });
-
-// --- LIBÉRATION MULTIPLE ---
-function libererSelection(idsSelectionnes) {
-    let totalFragments = 0;
-    
-    idsSelectionnes.forEach(id => {
-        let index = gameState.reserve.findIndex(p => p.id === id);
-        if (index > -1) {
-            let p = gameState.reserve.splice(index, 1)[0];
-            const gainsParRarete = { "commun": 5, "peuCommun": 10, "rare": 20, "tresRare": 50, "legendaire": 100 };
-            totalFragments += (gainsParRarete[p.niveauRarete] || 5);
-        }
-    });
-
-    gameState.fragments += totalFragments;
-    notify(`✨ Tu as libéré des Pokémon et gagné ${totalFragments} fragments !`);
-    
-    saveGame();
-    if (typeof updateUI === "function") updateUI();
-}
 
 function toggleSelection(pokemonId) {
     if (!multiReleaseMode) return;
@@ -884,9 +862,11 @@ function confirmMultiRelease() {
         return;
     }
 
-    // 1. On calcule le total exact de fragments selon la rareté avant de demander confirmation
     let totalFragments = 0;
-    const gainsParRarete = { "commun": 1, "peuCommun": 5, "rare": 10, "tresRare": 50, "legendaire": 100 };
+    const gainsParRarete = { "commun": 3, "peuCommun": 5, "rare": 10, "tresRare": 50, "legendaire": 100 };
+    
+    // ON SAUVEGARDE LE NOMBRE AVANT DE VIDER LA LISTE
+    let nbReleased = selectedForRelease.length; 
 
     gameState.reserve.forEach(m => {
         if (selectedForRelease.includes(m.id)) {
@@ -894,21 +874,16 @@ function confirmMultiRelease() {
         }
     });
 
-    // 2. On affiche le bon nombre de fragments dans le message de confirmation
     if (confirm(`🗑️ Relâcher ces ${selectedForRelease.length} Pokémon contre ${totalFragments} fragment(s) ?`)) {
         
-        // 3. On retire les Pokémon sélectionnés de la réserve
         gameState.reserve = gameState.reserve.filter(m => !selectedForRelease.includes(m.id));
         
-        // 4. SÉCURITÉ : On s'assure que gameState.fragments est bien un nombre (corrige le bug d'affichage)
         if (typeof gameState.fragments !== 'number' || isNaN(gameState.fragments)) {
             gameState.fragments = 0;
         }
 
-        // 5. On ajoute l'argent
         gameState.fragments += totalFragments;
         
-        // 6. On ferme proprement le mode de sélection
         selectedForRelease = [];
         multiReleaseMode = false;
         
@@ -924,6 +899,71 @@ function confirmMultiRelease() {
 
         notify(`✨ Pokémon libérés ! Tu as gagné ${totalFragments} fragment(s).`);
         
+        // MAINTENANT ON APPELLE AVEC LA BONNE VARIABLE SAUVEGARDÉE
+        verifierQuetes('release', nbReleased);
+        saveGame();
+        if (typeof updateUI === "function") updateUI();
+    }
+}
+
+function convertirFragmentsEnPO(quantiteFragments) {
+    const TAUX_CONVERSION = 1000; 
+
+    if (isNaN(quantiteFragments) || quantiteFragments <= 0) {
+        notify("Veuillez entrer une quantité valide.");
+        return;
+    }
+
+    if (gameState.fragments >= quantiteFragments) {
+        let gainPO = quantiteFragments * TAUX_CONVERSION;
+        
+        gameState.fragments -= quantiteFragments;
+        gameState.money += gainPO;
+        verifierQuetes('collect', gainPO); // <-- AJOUT POUR LA QUÊTE
+        
+        notify(`🔄 Conversion réussie : ${quantiteFragments} fragment(s) échangé(s) contre ${gainPO.toLocaleString()} PO !`);
+        
+        saveGame();
+        if(typeof updateUI === "function") updateUI();
+    } else {
+        notify("Tu n'as pas assez de fragments pour cette conversion !");
+    }
+}
+
+// Fonction pour faire avancer la barre de progression (CORRIGÉE avec ANTI-LAG)
+function verifierQuetes(type, increment = 1) {
+    if (!gameState.dailyQuests) return;
+    
+    let queteMiseAJour = false; // Sécurité anti-lag
+
+    gameState.dailyQuests.forEach(q => {
+        if (q.type === type && !q.completed && !q.claimed) {
+            q.progress += increment;
+            if (q.progress >= q.goal) {
+                q.progress = q.goal; 
+                q.completed = true;
+                notify("🎉 Quête accomplie : " + q.desc);
+            }
+            queteMiseAJour = true; // On signale qu'une barre a bougé
+        }
+    });
+
+    // On ne sauvegarde l'interface QUE si une quête a bougé
+    if (queteMiseAJour) {
+        saveGame();
+        if (typeof updateUI === "function") updateUI();
+    }
+}
+
+// Fonction pour récupérer l'argent (CORRIGÉE pour donner des FRAGMENTS)
+function recupererRecompense(questId) {
+    let q = gameState.dailyQuests.find(q => q.id === questId);
+    
+    if (q && q.completed && !q.claimed) {
+        gameState.fragments += (q.reward || 0); // On donne des FRAGMENTS
+        q.claimed = true; 
+        
+        notify(`🎉 Récompense reçue : +${q.reward} fragments !`);
         saveGame();
         if (typeof updateUI === "function") updateUI();
     }

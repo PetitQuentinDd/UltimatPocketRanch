@@ -15,7 +15,6 @@ function updateUI() {
         const reserveDiv = document.getElementById('reserve');
         if (reserveDiv) {
             reserveDiv.innerHTML = "";
-            
             if (typeof POKEDEX_IDS !== 'undefined') {
                 gameState.reserve.sort((a, b) => {
                     let idA = POKEDEX_IDS[a.name] || 9999;
@@ -24,7 +23,6 @@ function updateUI() {
                     return idA - idB; 
                 });
             }
-            
             gameState.reserve.forEach(m => {
                 let isSelected = false;
                 if (typeof selectedForRelease !== 'undefined' && Array.isArray(selectedForRelease)) {
@@ -67,37 +65,78 @@ function updateUI() {
             }
         }
 
-        // 7. --- MISE À JOUR DE LA ZONE D'INCUBATION ---
+        // 7. Mise à jour de l'Incubateur
         let incubateurUi = document.getElementById("incubateur-ui");
         if (incubateurUi) {
             if (gameState.activeEggIncubation) {
                 let progress = Math.min(50000, gameState.activeEggIncubation.progress || 0);
                 let percent = (progress / 50000) * 100;
-                
                 if (progress >= 50000) {
                     incubateurUi.innerHTML = `<button onclick="recupererOeuf()" style="background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">✨ L'ŒUF EST PRÊT ! ✨</button>`;
                 } else {
                     incubateurUi.innerHTML = `
-                        <div style="color: #79eddf; font-size: 11px; margin-bottom: 5px; font-weight: bold; text-align: center;">Incubation en cours : ${Math.floor(progress)} / 50 000 PO</div>
+                        <div style="color: #79eddf; font-size: 11px; margin-bottom: 5px; font-weight: bold; text-align: center;">Incubation : ${Math.floor(progress)} / 50 000 PO</div>
                         <div style="width: 100%; height: 14px; background: #334155; border-radius: 7px; overflow: hidden; border: 1px solid #475569;">
                             <div style="width: ${percent}%; height: 100%; background: #79eddf; transition: width 0.3s;"></div>
-                        </div>
-                    `;
+                        </div>`;
                 }
             } else {
-                incubateurUi.innerHTML = `
-                    <button onclick="lancerIncubation()" style="background: #e11d48; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                        🥚 FAIRE UN ŒUF (0 PO)
-                    </button>
-                `;
+                incubateurUi.innerHTML = `<button onclick="lancerIncubation()" style="background: #e11d48; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">🥚 FAIRE UN ŒUF (0 PO)</button>`;
             }
+        }
+
+        // 8. --- MISE À JOUR DES QUÊTES JOURNALIÈRES ---
+        const questContainer = document.getElementById("succes-list-container");
+        if (questContainer) {
+            questContainer.innerHTML = ""; 
+            
+            if (gameState.lastQuestReset !== new Date().toDateString()) {
+                if (typeof genererQuetesJournalieres === "function") genererQuetesJournalieres();
+            }
+            
+            if (gameState.dailyQuests) {
+                gameState.dailyQuests.forEach(q => {
+                    let pct = Math.min((q.progress / q.goal) * 100, 100);
+                    let questDiv = document.createElement("div");
+                    
+                    // Design calqué sur ton "Œuf Journalier" (Fond sombre, bordure néon cyan, ombre lumineuse)
+                    questDiv.style.cssText = "background: #151924; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #79eddf; margin-bottom: 15px; box-shadow: 0 0 10px rgba(121, 237, 223, 0.3);";
+                    
+                    let btnHtml = "";
+                    
+                    // Gestion des 3 états du bouton
+                    if (q.claimed) {
+                        // ETAT 3 : Déjà récupéré (Bouton Gris inactif)
+                        btnHtml = `<button disabled style="background: #475569; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 12px; width: 100%; margin-top: 10px; cursor: not-allowed;">✔️ RÉCUPÉRÉ</button>`;
+                    } else if (q.completed) {
+                        // ETAT 2 : Prêt à récupérer (Bouton Vert cliquable)
+                        btnHtml = `<button onclick="recupererRecompense(${q.id})" style="background: #10b981; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 12px; width: 100%; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">✅ RÉCUPÉRER (${q.reward} PO)</button>`;
+                    } else {
+                        // ETAT 1 : En cours (Bouton Rouge inactif)
+                        btnHtml = `<button disabled style="background: #ef4444; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 12px; width: 100%; margin-top: 10px; cursor: not-allowed; opacity: 0.7;">EN COURS...</button>`;
+                    }
+
+                    // Structure HTML de la carte
+                    questDiv.innerHTML = `
+                        <h3 style="color: #79eddf; margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase;">${q.desc}</h3>
+                        <div style="color: #94a3b8; font-size: 10px; font-weight: bold; margin-bottom: 8px;">Progression : ${q.progress} / ${q.goal}</div>
+                        
+                        <div style="width: 100%; height: 14px; background: #334155; border-radius: 7px; overflow: hidden; border: 1px solid #475569;">
+                            <div style="width: ${pct}%; height: 100%; background: #79eddf; transition: width 0.3s;"></div>
+                        </div>
+                        
+                        ${btnHtml}
+                    `;
+                    questContainer.appendChild(questDiv);
+                });
+            }
+        
         }
         
     } catch (error) {
         console.error("CRASH DANS L'AFFICHAGE (updateUI) :", error);
     }
 }
-
 function createCard(m, loc, isSelected = false) {
     let div = document.createElement("div");
     
@@ -154,7 +193,39 @@ function createCard(m, loc, isSelected = false) {
     `;
 
     let pressTimer;
+    let startX = 0, startY = 0;
 
+    // --- GESTION TACTILE SÉCURISÉE (ANTI-SCROLL) ---
+    div.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        
+        pressTimer = setTimeout(() => {
+            if (typeof multiReleaseMode !== 'undefined' && !multiReleaseMode) evolvePokemon(m);
+            pressTimer = null;
+        }, 2000);
+    }, { passive: true });
+
+    div.addEventListener('touchend', (e) => {
+        if (pressTimer) {
+            clearTimeout(pressTimer);
+        }
+        
+        let endX = e.changedTouches[0].clientX;
+        let endY = e.changedTouches[0].clientY;
+        let distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+
+        // Si la distance est faible (< 10px), on valide le clic
+        if (distance < 10 && pressTimer !== null) {
+            if (loc === 'reserve' && typeof multiReleaseMode !== 'undefined' && multiReleaseMode) {
+                toggleSelection(m.id);
+            } else {
+                switchZone(m.id, loc);
+            }
+        }
+    }, { passive: true });
+
+    // --- GESTION SOURIS (PC) ---
     div.onmousedown = () => {
         pressTimer = setTimeout(() => {
             if (typeof multiReleaseMode !== 'undefined' && !multiReleaseMode) evolvePokemon(m); 
@@ -165,24 +236,19 @@ function createCard(m, loc, isSelected = false) {
     div.onmouseup = () => {
         if (pressTimer) {
             clearTimeout(pressTimer);
-            switchZone(m.id, loc);
-        }
-    };
-
-    div.ontouchstart = (e) => {
-        pressTimer = setTimeout(() => {
-            if (typeof multiReleaseMode !== 'undefined' && !multiReleaseMode) evolvePokemon(m);
-            pressTimer = null;
-        }, 2000);
-    };
-
-    div.ontouchend = () => {
-        if (pressTimer) {
-            clearTimeout(pressTimer);
-            switchZone(m.id, loc);
+            if (loc === 'reserve' && typeof multiReleaseMode !== 'undefined' && multiReleaseMode) {
+                toggleSelection(m.id);
+            } else {
+                switchZone(m.id, loc);
+            }
         }
     };
     
+    // Empêche le menu contextuel natif pour un appui long sans erreur
+    div.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+
     return div;
 }
 
@@ -300,9 +366,6 @@ function selectPokemonForExpedition(expKey) {
     modal.style.display = 'flex';
 }
 
-// --- NAVIGATION DES ONGLETS ---
-
-
 // --- RAFRAÎCHISSEMENT DU TIMER (EXPÉDITIONS) ---
 setInterval(() => {
     const activeTab = document.querySelector('.tab-content.active');
@@ -354,6 +417,7 @@ function showHatchPopup(pokemon, isNew) {
         setTimeout(() => overlay.remove(), 300); 
     }, 1000);
 }
+
 function openTab(tabId) {
     // 1. Cacher tous les onglets
     document.querySelectorAll('.tab-content').forEach(tab => { 
@@ -383,16 +447,17 @@ function openTab(tabId) {
         if (typeof updateMapUI === "function") updateMapUI();
     }
     
-    // NOUVEAU : Mise à jour pour l'onglet des Succès et de l'Œuf Journalier
+    // Mise à jour pour l'onglet des Succès et de l'Œuf Journalier
     if (tabId === 'tab-succes') {
         if (typeof window.updateDailyEggUI === "function") {
             window.updateDailyEggUI();
         }
         if (typeof updateAchievementsUI === "function") {
-            updateAchievementsUI(); // Si tu as gardé le système de succès
+            updateAchievementsUI(); 
         }
     }
 }
+
 const styleSheet = document.createElement("style");
 styleSheet.innerText = `
     @keyframes fadeInOut {
@@ -404,7 +469,13 @@ styleSheet.innerText = `
 `;
 document.head.appendChild(styleSheet);
 
-// --- GESTION DU SAC ---
+
+/* ==========================================================================
+   GESTION DU SAC ET DES ONGLETS
+   ========================================================================== */
+
+let currentInventoryTab = 'soins'; // Variable globale pour mémoriser l'onglet actif
+
 function toggleSac(open) {
     const modal = document.getElementById('poche-sac-modal');
     if (!modal) return;
@@ -417,7 +488,6 @@ function toggleSac(open) {
     }
 }
 
-// --- MISE À JOUR DU SAC (Version avec Nom et Prix) ---
 function updateInventoryUI() {
     const invContainer = document.getElementById('inventory-container');
     if (!invContainer) return;
@@ -425,52 +495,88 @@ function updateInventoryUI() {
     invContainer.innerHTML = ""; 
     invContainer.style.alignContent = "start";
 
-    // Affiche ou masque le bouton "Confirmer la vente" si tu l'as mis dans le HTML
     const confirmBtn = document.getElementById('btn-confirm-sale');
     if (confirmBtn) {
         confirmBtn.style.display = (typeof sellMode !== 'undefined' && sellMode) ? "block" : "none";
     }
 
+    // 1. CRÉATION DES BOUTONS D'ONGLETS
+    let tabsContainer = document.createElement("div");
+    tabsContainer.style.cssText = "grid-column: 1 / -1; display: flex; gap: 5px; margin-bottom: 15px; width: 100%; justify-content: center;";
+    
+    const tabs = [
+        { id: 'soins', icon: '🩹', label: 'Soins' },
+        { id: 'baies', icon: '🍒', label: 'Baies' },
+        { id: 'evolution', icon: '✨', label: 'Évolution' }
+    ];
+
+    tabs.forEach(tab => {
+        let btn = document.createElement("button");
+        let isActive = currentInventoryTab === tab.id;
+        btn.innerHTML = `${tab.icon} ${tab.label}`;
+        btn.style.cssText = `
+            flex: 1; padding: 8px 4px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; border: none;
+            background: ${isActive ? '#79eddf' : '#334155'};
+            color: ${isActive ? '#0f172a' : 'white'};
+            transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        `;
+        btn.onclick = () => {
+            currentInventoryTab = tab.id;
+            updateInventoryUI(); 
+        };
+        tabsContainer.appendChild(btn);
+    });
+
+    invContainer.appendChild(tabsContainer);
+
+    // 2. VÉRIFICATION DU SAC VIDE
     if (!gameState.inventory || gameState.inventory.length === 0) {
-        invContainer.innerHTML = "<p style='color:#64748b; text-align:center; margin-top:20px; width: 100%;'>Le sac est vide...</p>";
+        invContainer.innerHTML += "<p style='color:#64748b; text-align:center; margin-top:20px; width: 100%; grid-column: 1 / -1;'>Ton sac est complètement vide...</p>";
         return;
     }
+
+    // 3. AFFICHAGE ET FILTRAGE DES OBJETS
+    let itemsFound = false;
 
     gameState.inventory.forEach(itemEntry => {
         const itemData = ITEMS_CONFIG[itemEntry.itemKey];
         if (!itemData) return;
         
-        // On récupère le prix : priorité au prix stocké dans l'inventaire, sinon celui de la config
+        const itemCategory = itemData.categorie || 'soins';
+        
+        if (itemCategory !== currentInventoryTab) return;
+
+        itemsFound = true; 
+
         const prixAffiché = itemEntry.price !== undefined ? itemEntry.price : (itemData.price || 0);
         
         let div = document.createElement("div");
         div.className = "monster-card";
         div.style.cursor = "pointer";
         
-        // Gestion visuelle de la sélection multiple
         if (typeof selectedForSale !== 'undefined' && selectedForSale.includes(itemEntry.itemKey)) {
-            div.style.border = "3px solid #f59e0b"; // Bordure orange épaisse si sélectionné
-            div.style.transform = "scale(0.95)"; // Petit effet d'enfoncement
+            div.style.border = "3px solid #f59e0b";
+            div.style.transform = "scale(0.95)"; 
         } else if (typeof sellMode !== 'undefined' && sellMode) {
-            div.style.border = "1px solid #f59e0b"; // Bordure fine pour indiquer qu'on peut cliquer
+            div.style.border = "1px solid #f59e0b";
             div.style.transform = "scale(1)";
         } else {
-            div.style.border = ""; // Normal
+            div.style.border = "";
             div.style.transform = "scale(1)";
         }
         
-        div.innerHTML = `
+   div.innerHTML = `
             <div class="monster-image-container" style="height: 55px; display: flex; justify-content: center; align-items: center; margin-bottom: 5px;">
                 <img src="${itemData.image}" style="max-width: 45px; max-height: 45px; object-fit: contain;">
             </div>
             <div class="monster-info" style="width: 100%; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1;">
-                <div class="monster-name" style="text-align: center; font-size: 11px; font-weight: bold; margin-bottom: 2px;">
+                <div class="monster-name" style="text-align: center; font-size: 10px; font-weight: bold; margin-bottom: 2px; height: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; line-height: 1.1;">
                     ${itemData.name}
                 </div>
                 <div style="text-align: center; font-size: 9px; color: #fbbf24; margin-bottom: 5px;">
-                    Prix: ${prixAffiché} PO
+                    ${prixAffiché} PO
                 </div>
-                <div class="monster-income" style="color: #79eddf; font-weight: bold; background: #334155; padding: 4px; border-radius: 4px; text-align: center; font-size: 10px;">
+                <div class="monster-income" style="color: #79eddf; font-weight: bold; background: #334155; padding: 3px; border-radius: 4px; text-align: center; font-size: 10px;">
                     Qté : ${itemEntry.quantity}
                 </div>
             </div>
@@ -478,19 +584,23 @@ function updateInventoryUI() {
 
         div.onclick = () => {
             if (typeof sellMode !== 'undefined' && sellMode) {
-                // On ajoute/retire de la sélection au lieu de vendre direct
-                if (typeof toggleItemSelection === 'function') {
-                    toggleItemSelection(itemEntry.itemKey);
-                }
+                if (typeof toggleItemSelection === 'function') toggleItemSelection(itemEntry.itemKey);
             } else {
-                // Utilisation normale
                 openPokemonSelector(itemEntry.itemKey);
             }
         };
 
         invContainer.appendChild(div);
     });
+
+    if (!itemsFound) {
+        let emptyMsg = document.createElement("p");
+        emptyMsg.style.cssText = "color:#64748b; text-align:center; margin-top:20px; width: 100%; grid-column: 1 / -1;";
+        emptyMsg.innerText = "Aucun objet de ce type dans ton sac.";
+        invContainer.appendChild(emptyMsg);
+    }
 }
+
 // --- SÉLECTION DU POKÉMON POUR UTILISER UN OBJET ---
 function openPokemonSelector(itemKey) {
     let allPokemon = [...gameState.activeTeam];
