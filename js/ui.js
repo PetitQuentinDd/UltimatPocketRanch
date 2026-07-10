@@ -1,6 +1,7 @@
 /* ==========================================================================
    IDLE POCKET RANCH - INTERFACE ET AFFICHAGE (ui.js)
    ========================================================================== */
+window.currentInventoryTab = 'soins';
 
 function updateUI() {
     try {
@@ -99,32 +100,23 @@ function updateUI() {
                     let pct = Math.min((q.progress / q.goal) * 100, 100);
                     let questDiv = document.createElement("div");
                     
-                    // Design calqué sur ton "Œuf Journalier" (Fond sombre, bordure néon cyan, ombre lumineuse)
-                    questDiv.style.cssText = "background: #151924; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #79eddf; margin-bottom: 15px; box-shadow: 0 0 10px rgba(121, 237, 223, 0.3);";
+                    // Style ultra-compact : marges minimes, pas de padding superflu
+                    questDiv.style.cssText = "background: #151924; padding: 4px 8px; border-radius: 6px; text-align: center; border: 1px solid #79eddf; margin-bottom: 5px; font-size: 9px;";
                     
-                    let btnHtml = "";
-                    
-                    // Gestion des 3 états du bouton
-                    if (q.claimed) {
-                        // ETAT 3 : Déjà récupéré (Bouton Gris inactif)
-                        btnHtml = `<button disabled style="background: #475569; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 12px; width: 100%; margin-top: 10px; cursor: not-allowed;">✔️ RÉCUPÉRÉ</button>`;
-                    } else if (q.completed) {
-                        // ETAT 2 : Prêt à récupérer (Bouton Vert cliquable)
-                        btnHtml = `<button onclick="recupererRecompense(${q.id})" style="background: #10b981; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 12px; width: 100%; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">✅ RÉCUPÉRER (${q.reward} PO)</button>`;
-                    } else {
-                        // ETAT 1 : En cours (Bouton Rouge inactif)
-                        btnHtml = `<button disabled style="background: #ef4444; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; font-size: 12px; width: 100%; margin-top: 10px; cursor: not-allowed; opacity: 0.7;">EN COURS...</button>`;
-                    }
+                    let btnHtml = q.claimed ? 
+                        `<div style="color: #475569; font-weight: bold; font-size: 9px; margin-top:2px;">✔️ RÉCUPÉRÉ</div>` :
+                        q.completed ? 
+                        `<button onclick="recupererRecompense(${q.id})" style="background: #10b981; color: white; border: none; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 9px; cursor: pointer;">RÉCUPÉRER</button>` :
+                        `<div style="color: #ef4444; font-size: 9px; margin-top:2px;">EN COURS...</div>`;
 
-                    // Structure HTML de la carte
                     questDiv.innerHTML = `
-                        <h3 style="color: #79eddf; margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase;">${q.desc}</h3>
-                        <div style="color: #94a3b8; font-size: 10px; font-weight: bold; margin-bottom: 8px;">Progression : ${q.progress} / ${q.goal}</div>
-                        
-                        <div style="width: 100%; height: 14px; background: #334155; border-radius: 7px; overflow: hidden; border: 1px solid #475569;">
-                            <div style="width: ${pct}%; height: 100%; background: #79eddf; transition: width 0.3s;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+                            <span style="color: #79eddf; font-weight: bold; font-size: 10px;">${q.desc}</span>
+                            <span style="color: #94a3b8; font-size: 9px;">${q.progress}/${q.goal}</span>
                         </div>
-                        
+                        <div style="width: 100%; height: 6px; background: #334155; border-radius: 3px; overflow: hidden;">
+                            <div style="width: ${pct}%; height: 100%; background: #79eddf;"></div>
+                        </div>
                         ${btnHtml}
                     `;
                     questContainer.appendChild(questDiv);
@@ -512,7 +504,7 @@ function updateInventoryUI() {
 
     tabs.forEach(tab => {
         let btn = document.createElement("button");
-        let isActive = currentInventoryTab === tab.id;
+        let isActive = window.currentInventoryTab === tab.id;
         btn.innerHTML = `${tab.icon} ${tab.label}`;
         btn.style.cssText = `
             flex: 1; padding: 8px 4px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; border: none;
@@ -521,7 +513,7 @@ function updateInventoryUI() {
             transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         `;
         btn.onclick = () => {
-            currentInventoryTab = tab.id;
+            window.currentInventoryTab = tab.id;
             updateInventoryUI(); 
         };
         tabsContainer.appendChild(btn);
@@ -544,7 +536,7 @@ function updateInventoryUI() {
         
         const itemCategory = itemData.categorie || 'soins';
         
-        if (itemCategory !== currentInventoryTab) return;
+        if (itemCategory !== window.currentInventoryTab) return;
 
         itemsFound = true; 
 
@@ -569,16 +561,12 @@ function updateInventoryUI() {
             <div class="monster-image-container" style="height: 55px; display: flex; justify-content: center; align-items: center; margin-bottom: 5px;">
                 <img src="${itemData.image}" style="max-width: 45px; max-height: 45px; object-fit: contain;">
             </div>
-            <div class="monster-info" style="width: 100%; display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1;">
-                <div class="monster-name" style="text-align: center; font-size: 10px; font-weight: bold; margin-bottom: 2px; height: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; line-height: 1.1;">
-                    ${itemData.name}
+            <div class="monster-info" style="width: 100%; display: flex; flex-direction: column; flex-grow: 1;">
+                <div class="monster-name" style="text-align: center; font-size: 11px; font-weight: bold; margin-bottom: 2px; color: white; display: block; height: 24px;">
+                    ${itemData.name || "Objet"}
                 </div>
-                <div style="text-align: center; font-size: 9px; color: #fbbf24; margin-bottom: 5px;">
-                    ${prixAffiché} PO
-                </div>
-                <div class="monster-income" style="color: #79eddf; font-weight: bold; background: #334155; padding: 3px; border-radius: 4px; text-align: center; font-size: 10px;">
-                    Qté : ${itemEntry.quantity}
-                </div>
+                <div style="text-align: center; font-size: 9px; color: #fbbf24; margin-bottom: 5px;">${prixAffiché} PO</div>
+                <div style="color: #79eddf; font-weight: bold; background: #334155; padding: 3px; border-radius: 4px; text-align: center; font-size: 10px;">Qté : ${itemEntry.quantity}</div>
             </div>
         `;
 
